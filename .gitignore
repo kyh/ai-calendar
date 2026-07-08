@@ -43,3 +43,8 @@ next-env.d.ts
 .claude/scheduled_tasks.lock
 .claude/worktrees
 .playwright-mcp
+
+# eve
+.eve/
+.workflow-data/
+.output/

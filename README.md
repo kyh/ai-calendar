@@ -1,68 +1,53 @@
 # AI Calendar
 
-AI-native calendar — manage your schedule in natural language. Forkable
-Next.js template.
+AI-native calendar — manage your schedule in natural language. A forkable Next.js template built on [eve](https://eve.dev), Vercel's agent framework.
 
 ![AI Calendar](public/og.jpg)
 
 ## Features
 
-- **Talk to your calendar** — "Lunch with Sam tomorrow at noon", "Move my 3pm
-  to Thursday", "What does next week look like?" The assistant creates,
-  updates, and deletes events; answers come straight from your schedule.
-- **Month + week views** — day-cell grid with event chips and overflow, 7-day
-  time grid with positioned events, all-day row, overlap lanes.
-- **Manual CRUD** — click a day/slot to create, click an event to edit or
-  delete. Events persist to localStorage (zustand persist).
-- **Bring your own key** — visitors paste their own Vercel AI Gateway key
-  (stored locally in the browser), or hit "Use a demo key" for a scripted,
-  fully client-side chat round-trip.
+- **Talk to your calendar** — "Lunch with Sam tomorrow at noon", "Move my 3pm to Thursday", "What does next week look like?" The assistant creates, updates, and deletes events; answers come straight from your schedule.
+- **Month + week views** — day-cell grid with event chips and overflow, 7-day time grid with positioned events, all-day row, overlap lanes.
+- **Manual CRUD** — click a day/slot to create, click an event to edit or delete. Events persist to localStorage (zustand persist, zod-validated).
+- **Tool-driven mutations** — the agent changes the schedule through typed eve tools; results stream into the calendar UI live.
+- **Bring your own key** — visitors add their own [Vercel AI Gateway key](https://vercel.com/docs/ai-gateway) (stored in the browser) and the agent runs on it per session.
 
 ## Setup
 
 ```bash
 pnpm install
-cp .env.example .env.local   # add your AI_GATEWAY_API_KEY
+echo "AI_GATEWAY_API_KEY=vck_..." > .env.local
 pnpm dev
 ```
 
-Get a gateway key from the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway)
-dashboard. In development the server uses `AI_GATEWAY_API_KEY` directly; in
-production visitors supply a key in the UI (or the optional `SECRET_KEY`
-sentinel swaps in the server key). No key at all? The `demo` key replays a
-scripted exchange without any network calls.
+`pnpm dev` boots both runtimes: the Next.js dev server and eve's agent dev server (proxied same-origin by `withEve`). In development the agent uses `AI_GATEWAY_API_KEY`; in production, keyless visitors are prompted for their own gateway key, which rides each request as a bearer token and backs a per-session model.
 
 Requires Node 24+.
 
 ## Architecture
 
 ```
-src/ai/
-├── gateway.ts                   # createModel(apiKey) — one model config
-├── agents/
-│   ├── calendar-agent.ts        # ToolLoopAgent: createEvent / updateEvent / deleteEvent
-│   └── calendar-agent-prompt.ts # system prompt
-├── messages/
-│   ├── data-parts.ts            # zod schemas — the client <-> server contract
-│   └── types.ts                 # UIMessage specializations + stream writer type
-└── response/
-    └── stream-chat-response.ts  # createUIMessageStream -> agent.stream -> merge
-src/app/api/chat/route.ts        # POST: zod-parsed body, key resolution, delegate
-src/components/chat/             # chat panel (useChat + onData), api-key dialog,
-                                 # demo transport (@loremllm/transport)
-src/lib/                         # event schema (zod), zustand store, calendar-context
+agent/
+├── agent.ts             # defineAgent: gateway model + BYO-key dynamic model resolver
+├── instructions.md      # system prompt (incl. the per-turn context contract)
+├── channels/eve.ts      # HTTP auth: user bearer key → Vercel OIDC → localhost dev
+└── tools/
+    ├── create_event.ts  # defineTool — filename = tool name the model sees
+    ├── update_event.ts
+    ├── delete_event.ts
+    └── *.ts             # disableTool() sentinels for the built-in harness tools
+next.config.ts           # withEve(nextConfig) — mounts eve behind the Next.js origin
+src/lib/assistant-schemas.ts  # zod contract shared by agent tools + chat panel
+src/lib/calendar-context.ts   # per-turn app state (now/timezone + ±45-day events window)
+src/components/chat/     # chat panel (useEveAgent bridge), api key dialog
+src/components/calendar/ # app shell, header, month view, week view, event dialog
+src/lib/event-store.ts   # zustand + localStorage persist
 ```
 
-The model never mutates state directly: each tool validates its input, writes
-a `data-<create|update|delete>-event` part into the UI-message stream, and
-returns a text ack. The client `onData` handler zod-parses every payload
-before folding it into the zustand store. The server is stateless — the
-client ships the relevant schedule window (± 45 days), current datetime, and
-timezone as per-turn context that gets appended to the agent's instructions.
+The streaming contract: the client sends the schedule snapshot as eve `clientContext` on every turn (`send({ message, clientContext })`); each tool returns a structured payload the chat panel receives as an `action.result` stream event, zod-parses against `assistant-schemas.ts`, and applies to the zustand store — so AI edits appear on the calendar in real time.
 
-## Notes for forkers
+## Notes
 
-- Replace `public/og.jpg` and `public/favicon/` with your own brand assets.
-- UI components are shadcn/ui **base-vega** (Base UI primitives). Add more
-  with `pnpm dlx shadcn@latest add <name>`.
-- Swap the model in one place: `src/ai/gateway.ts`.
+- UI: shadcn/ui **base-vega** style (Base UI primitives). Add components with `pnpm dlx shadcn@latest add <name>`.
+- Replace `public/og.jpg` and `public/favicon/` with your own brand assets before shipping a fork.
+- Never run `eve build` while `pnpm dev` is running — it corrupts eve's dev cache (fix: delete `.eve/` + `.workflow-data/` and restart).

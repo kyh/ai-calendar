@@ -74,12 +74,6 @@ export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
             }}
             autoFocus
           />
-          <div className="text-sm text-muted-foreground">
-            <button type="button" className="underline" onClick={() => setApiKeyInput("demo")}>
-              Use a demo key
-            </button>
-            &nbsp;(Uses a scripted client-side reply — no API key or network needed.)
-          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
