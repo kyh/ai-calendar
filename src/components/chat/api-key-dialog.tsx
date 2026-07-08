@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import * as React from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -24,12 +24,14 @@ interface ApiKeyDialogProps {
 
 export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
   const [apiKey, setApiKey, removeApiKey] = useLocalStorage(GATEWAY_API_KEY_STORAGE_KEY, "");
-  const [apiKeyInput, setApiKeyInput] = useState("");
+  const [apiKeyInput, setApiKeyInput] = React.useState(apiKey);
 
-  // Sync input with stored value when dialog opens
-  useEffect(() => {
-    if (open) setApiKeyInput(apiKey);
-  }, [open, apiKey]);
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
+      setApiKeyInput(apiKey);
+    }
+    onOpenChange(nextOpen);
+  };
 
   const handleSaveApiKey = () => {
     if (apiKeyInput.trim()) {
@@ -42,7 +44,7 @@ export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Enter Vercel Gateway API Key</DialogTitle>
@@ -64,9 +66,9 @@ export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
             type="password"
             placeholder="vck_..."
             value={apiKeyInput}
-            onChange={(changeEvent) => setApiKeyInput(changeEvent.target.value)}
-            onKeyDown={(keyEvent) => {
-              if (keyEvent.key === "Enter" && apiKeyInput.trim()) {
+            onChange={(e) => setApiKeyInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && apiKeyInput.trim()) {
                 handleSaveApiKey();
               }
             }}
@@ -76,7 +78,7 @@ export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
             <button type="button" className="underline" onClick={() => setApiKeyInput("demo")}>
               Use a demo key
             </button>
-            &nbsp;(replies are scripted)
+            &nbsp;(Uses a scripted client-side reply — no API key or network needed.)
           </div>
         </div>
         <DialogFooter>

@@ -1,11 +1,7 @@
 import { validateUIMessages } from "ai";
 import { z } from "zod";
 
-import {
-  createEventDataSchema,
-  deleteEventDataSchema,
-  updateEventDataSchema,
-} from "@/ai/messages/data-parts";
+import { dataPartSchemas } from "@/ai/messages/data-parts";
 import type { ChatUIMessage } from "@/ai/messages/types";
 import { streamChatResponse } from "@/ai/response/stream-chat-response";
 import { calendarContextSchema } from "@/lib/calendar-context";
@@ -21,20 +17,13 @@ export async function POST(request: Request) {
   if (!body.success) {
     return new Response("Invalid request body", { status: 400 });
   }
-
   const { gatewayApiKey, calendarContext } = body.data;
 
   let messages: ChatUIMessage[];
   try {
-    // No metadataSchema: ours is an empty object and messages legitimately
-    // arrive with `metadata: undefined`, which a schema would reject.
     messages = await validateUIMessages<ChatUIMessage>({
       messages: body.data.messages,
-      dataSchemas: {
-        "create-event": createEventDataSchema,
-        "update-event": updateEventDataSchema,
-        "delete-event": deleteEventDataSchema,
-      },
+      dataSchemas: dataPartSchemas,
     });
   } catch {
     return new Response("Invalid messages", { status: 400 });

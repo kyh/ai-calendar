@@ -13,22 +13,26 @@ import { calendarEventPatchSchema, calendarEventSchema } from "@/lib/event";
 
 export const createEventDataSchema = z.object({
   event: calendarEventSchema,
-  status: z.literal("done"),
 });
 
 export const updateEventDataSchema = z.object({
   id: z.string().min(1),
   patch: calendarEventPatchSchema,
-  status: z.literal("done"),
 });
 
 export const deleteEventDataSchema = z.object({
   id: z.string().min(1),
-  status: z.literal("done"),
 });
 
 export type DataPart = {
   "create-event": z.infer<typeof createEventDataSchema>;
   "update-event": z.infer<typeof updateEventDataSchema>;
   "delete-event": z.infer<typeof deleteEventDataSchema>;
+};
+
+/** Schemas keyed by (unprefixed) data part name, for validateUIMessages. */
+export const dataPartSchemas: { [K in keyof DataPart]: z.ZodType<DataPart[K]> } = {
+  "create-event": createEventDataSchema,
+  "update-event": updateEventDataSchema,
+  "delete-event": deleteEventDataSchema,
 };

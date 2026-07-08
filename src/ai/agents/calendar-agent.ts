@@ -2,12 +2,7 @@ import { stepCountIs, tool, ToolLoopAgent } from "ai";
 import { z } from "zod";
 
 import { createModel } from "@/ai/gateway";
-import {
-  createEventDataSchema,
-  deleteEventDataSchema,
-  updateEventDataSchema,
-} from "@/ai/messages/data-parts";
-import type { CalendarStreamWriter } from "@/ai/messages/types";
+import type { ChatStreamWriter } from "@/ai/messages/types";
 import type { CalendarContext } from "@/lib/calendar-context";
 import { calendarEventInputSchema, calendarEventPatchSchema } from "@/lib/event";
 import calendarPrompt from "./calendar-agent-prompt";
@@ -20,7 +15,7 @@ import calendarPrompt from "./calendar-agent-prompt";
  */
 
 interface WriterParams {
-  writer: CalendarStreamWriter;
+  writer: ChatStreamWriter;
 }
 
 const createCreateEventTool = ({ writer }: WriterParams) =>
@@ -31,12 +26,9 @@ const createCreateEventTool = ({ writer }: WriterParams) =>
       "timezone suffix, e.g. 2026-07-09T15:00:00.",
     inputSchema: calendarEventInputSchema,
     execute: async (input, { toolCallId }) => {
-      const data = createEventDataSchema.parse({
-        event: { ...input, id: crypto.randomUUID() },
-        status: "done",
-      });
-      writer.write({ id: toolCallId, type: "data-create-event", data });
-      return `Successfully created "${data.event.title}" (${data.event.start} – ${data.event.end}) with id ${data.event.id}.`;
+      const event = { ...input, id: crypto.randomUUID() };
+      writer.write({ id: toolCallId, type: "data-create-event", data: { event } });
+      return `Successfully created "${event.title}" (${event.start} – ${event.end}) with id ${event.id}.`;
     },
   });
 
@@ -51,9 +43,8 @@ const createUpdateEventTool = ({ writer }: WriterParams) =>
       patch: calendarEventPatchSchema.describe("Fields to change"),
     }),
     execute: async (input, { toolCallId }) => {
-      const data = updateEventDataSchema.parse({ ...input, status: "done" });
-      writer.write({ id: toolCallId, type: "data-update-event", data });
-      return `Successfully updated event ${data.id}.`;
+      writer.write({ id: toolCallId, type: "data-update-event", data: input });
+      return `Successfully updated event ${input.id}.`;
     },
   });
 
@@ -66,9 +57,8 @@ const createDeleteEventTool = ({ writer }: WriterParams) =>
       id: z.string().min(1).describe("Id of the event to delete"),
     }),
     execute: async (input, { toolCallId }) => {
-      const data = deleteEventDataSchema.parse({ ...input, status: "done" });
-      writer.write({ id: toolCallId, type: "data-delete-event", data });
-      return `Successfully deleted event ${data.id}.`;
+      writer.write({ id: toolCallId, type: "data-delete-event", data: input });
+      return `Successfully deleted event ${input.id}.`;
     },
   });
 
@@ -88,7 +78,7 @@ ${JSON.stringify(context.events)}`,
 
 interface CreateCalendarAgentParams {
   apiKey: string;
-  writer: CalendarStreamWriter;
+  writer: ChatStreamWriter;
   calendarContext: CalendarContext;
 }
 

@@ -18,9 +18,9 @@ manual CRUD works too. Forkable template.
 ```
 src/
 ├── ai/
-│   ├── gateway.ts            # MODEL_ID + createModel(apiKey) — the one model config
+│   ├── gateway.ts            # createModel(apiKey) — the one model config
 │   ├── agents/               # calendar-agent.ts (ToolLoopAgent factory) + prompt
-│   ├── messages/             # data-parts.ts (zod contract), metadata.ts, types.ts
+│   ├── messages/             # data-parts.ts (zod contract), types.ts
 │   └── response/             # stream-chat-response.ts (UI-message stream plumbing)
 ├── app/                      # pages, api/chat route, sitemap, robots.txt route
 ├── components/               # calendar/, chat/ (panel, api-key dialog, demo transport), ui/

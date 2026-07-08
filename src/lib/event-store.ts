@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 import {
   calendarEventSchema,
@@ -91,6 +91,7 @@ export const useEventStore = create<EventStoreState>()(
     }),
     {
       name: "ai-calendar-events",
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ events: state.events, seeded: state.seeded }),
       merge: (persisted, current) => {
         const parsed = persistedStateSchema.safeParse(persisted);

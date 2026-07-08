@@ -82,7 +82,7 @@ export const ChatPanel = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { messages, sendMessage, status } = useChat<ChatUIMessage>({
-    id: apiKey,
+    id: apiKey === "" ? "keyless" : apiKey,
     transport: apiKey === "demo" ? demoTransport : undefined,
     onError: (error) => {
       const message = error.message.toLowerCase();
@@ -90,9 +90,9 @@ export const ChatPanel = () => {
         message.includes("unauthorized") ||
         message.includes("authentication") ||
         message.includes("invalid api key") ||
+        message.includes("gateway api key is required") ||
         message.includes("401") ||
-        message.includes("403") ||
-        message.includes("gateway api key is required");
+        message.includes("403");
       if (isAuthError) {
         removeApiKey();
         toast.error("Invalid API key. Please enter a valid Vercel Gateway API key.");
@@ -129,15 +129,12 @@ export const ChatPanel = () => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages]);
 
-  const needsKey = () =>
-    apiKey.length === 0 &&
-    typeof window !== "undefined" &&
-    window.location.hostname !== "localhost";
+  const needsKey = !apiKey && process.env.NODE_ENV !== "development";
 
   const send = (message: string) => {
     const trimmed = message.trim();
     if (trimmed.length === 0 || busy) return;
-    if (needsKey()) {
+    if (needsKey) {
       setShowApiKeyDialog(true);
       return;
     }
@@ -248,7 +245,7 @@ export const ChatPanel = () => {
           value={input}
           onChange={(changeEvent) => setInput(changeEvent.target.value)}
           onFocus={() => {
-            if (needsKey()) setShowApiKeyDialog(true);
+            if (needsKey) setShowApiKeyDialog(true);
           }}
           placeholder="Ask about your schedule…"
           aria-label="Message the assistant"

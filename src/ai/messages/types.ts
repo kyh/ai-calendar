@@ -1,19 +1,18 @@
 import type { UIMessage, UIMessageStreamWriter } from "ai";
 
+import type { DataPart } from "@/ai/messages/data-parts";
 import type { CalendarEventInput, CalendarEventPatch } from "@/lib/event";
-import type { DataPart } from "./data-parts";
-import type { Metadata } from "./metadata";
 
 /**
- * UI tool typings for the calendar agent's tool set — lets the chat
- * transcript narrow `tool-*` message parts without casts.
+ * UI tool typings for the agent's tool set — lets the chat transcript
+ * narrow `tool-*` message parts without casts.
  */
-export type CalendarTools = {
+export type ChatTools = {
   createEvent: { input: CalendarEventInput; output: string };
   updateEvent: { input: { id: string; patch: CalendarEventPatch }; output: string };
   deleteEvent: { input: { id: string }; output: string };
 };
 
-export type ChatUIMessage = UIMessage<Metadata, DataPart, CalendarTools>;
+export type ChatUIMessage = UIMessage<unknown, DataPart, ChatTools>;
 
-export type CalendarStreamWriter = UIMessageStreamWriter<ChatUIMessage>;
+export type ChatStreamWriter = UIMessageStreamWriter<ChatUIMessage>;

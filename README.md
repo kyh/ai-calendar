@@ -38,13 +38,12 @@ Requires Node 24+.
 
 ```
 src/ai/
-├── gateway.ts                   # MODEL_ID + createModel(apiKey) — one model config
+├── gateway.ts                   # createModel(apiKey) — one model config
 ├── agents/
 │   ├── calendar-agent.ts        # ToolLoopAgent: createEvent / updateEvent / deleteEvent
 │   └── calendar-agent-prompt.ts # system prompt
 ├── messages/
 │   ├── data-parts.ts            # zod schemas — the client <-> server contract
-│   ├── metadata.ts              # message metadata schema
 │   └── types.ts                 # UIMessage specializations + stream writer type
 └── response/
     └── stream-chat-response.ts  # createUIMessageStream -> agent.stream -> merge

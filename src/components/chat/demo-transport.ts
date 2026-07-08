@@ -105,7 +105,7 @@ export const demoTransport = new StaticChatTransport<ChatUIMessage>({
       yield {
         type: "data-create-event",
         id: seed.toolCallId,
-        data: { event, status: "done" },
+        data: { event },
       };
     }
 

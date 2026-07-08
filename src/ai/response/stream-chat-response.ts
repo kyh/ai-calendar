@@ -5,17 +5,17 @@ import type { ChatUIMessage } from "@/ai/messages/types";
 import type { CalendarContext } from "@/lib/calendar-context";
 
 /**
- * Opens a UI-message stream, runs the calendar agent over the conversation,
- * and merges the agent's output (text + tool `data-*` parts) back into the
- * same stream. The per-turn calendar context is appended to the agent's
+ * Opens a UI-message stream, runs the agent over the conversation, and
+ * merges the agent's output (text + tool `data-*` parts) back into the
+ * same stream. The per-turn app context is appended to the agent's
  * instructions server-side; the server keeps no state.
  */
-export const streamChatResponse = (
+export function streamChatResponse(
   messages: ChatUIMessage[],
   apiKey: string,
   calendarContext: CalendarContext,
-) =>
-  createUIMessageStreamResponse({
+) {
+  return createUIMessageStreamResponse({
     stream: createUIMessageStream<ChatUIMessage>({
       originalMessages: messages,
       execute: async ({ writer }) => {
@@ -28,3 +28,4 @@ export const streamChatResponse = (
       },
     }),
   });
+}
