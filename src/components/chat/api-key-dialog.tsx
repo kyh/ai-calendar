@@ -51,7 +51,7 @@ export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
           <DialogDescription>
             Enter your{" "}
             <a
-              href="https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%2Fapi-keys%3Futm_source%3Dai-calendar.kyh.io&title=Get+an+API+Key"
+              href="https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%2Fapi-keys%3Futm_source%3Dcalendar.kyh.io&title=Get+an+API+Key"
               target="_blank"
               rel="noopener noreferrer"
               className="underline"
