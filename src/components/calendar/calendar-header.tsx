@@ -10,7 +10,8 @@ import { cn } from "@/lib/utils";
 export type CalendarView = "month" | "week";
 
 interface CalendarHeaderProps {
-  focusDate: Date;
+  /** `null` before the client reads the clock — see calendar-app. */
+  focusDate: Date | null;
   view: CalendarView;
   chatOpen: boolean;
   onViewChange: (view: CalendarView) => void;
@@ -41,7 +42,9 @@ export const CalendarHeader = ({
     <Button variant="ghost" size="icon-sm" aria-label="Next" onClick={onNext}>
       <ChevronRightIcon />
     </Button>
-    <span className="ml-1 text-sm font-medium">{formatRangeLabel(focusDate, view)}</span>
+    <span className="ml-1 text-sm font-medium">
+      {focusDate === null ? null : formatRangeLabel(focusDate, view)}
+    </span>
     <div className="ml-auto flex items-center gap-2">
       <div className="flex rounded-md border p-0.5">
         {(["month", "week"] satisfies CalendarView[]).map((candidate) => (

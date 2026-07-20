@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { addMonths, addWeeks, set } from "date-fns";
 
 import { CalendarHeader, type CalendarView } from "@/components/calendar/calendar-header";
@@ -16,16 +16,23 @@ export const CalendarApp = () => {
   const events = useEventStore((store) => store.events);
   const hasHydrated = useEventStore((store) => store.hasHydrated);
   const [view, setView] = useState<CalendarView>("month");
-  const [focusDate, setFocusDate] = useState(() => new Date());
+  // `null` until mounted: the wall clock differs between the server render
+  // (UTC on Vercel) and the browser's local zone, so at a month/week boundary
+  // an SSR'd date label would disagree with the client and break hydration.
+  // Reading the clock in an effect keeps every clock-derived value off the server.
+  const [focusDate, setFocusDate] = useState<Date | null>(null);
   const [chatOpen, setChatOpen] = useState(true);
   const [dialogState, setDialogState] = useState<EventDialogState>({
     mode: "closed",
   });
 
+  useEffect(() => setFocusDate(new Date()), []);
+
   const step = (direction: 1 | -1) => {
-    setFocusDate((current) =>
-      view === "month" ? addMonths(current, direction) : addWeeks(current, direction),
-    );
+    setFocusDate((current) => {
+      if (current === null) return null;
+      return view === "month" ? addMonths(current, direction) : addWeeks(current, direction);
+    });
   };
 
   const openCreate = (start: Date) => setDialogState({ mode: "create", start, allDay: false });
@@ -46,7 +53,7 @@ export const CalendarApp = () => {
       />
       <div className="flex min-h-0 flex-1">
         <main className="min-w-0 flex-1">
-          {!hasHydrated ? (
+          {!hasHydrated || focusDate === null ? (
             <div className="flex h-full items-center justify-center">
               <Spinner className="size-5 text-muted-foreground" />
             </div>

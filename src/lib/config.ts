@@ -3,8 +3,7 @@ export const siteConfig = {
   shortName: "AI Calendar",
   description:
     "AI-native calendar — manage your schedule in natural language. Forkable Next.js template.",
-  url:
-    process.env.NODE_ENV === "development" ? "http://localhost:3000" : "https://calendar.kyh.io",
+  url: process.env.NODE_ENV === "development" ? "http://localhost:3000" : "https://calendar.kyh.io",
   creator: "@kaiyuhsu",
   routes: [""],
 };
