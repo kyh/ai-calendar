@@ -57,17 +57,17 @@ Runtime — drive the real UI with [agent-browser](https://github.com/vercel-lab
 
 ```sh
 agent-browser open http://localhost:3000
-agent-browser snapshot                         # accessibility tree with @eN refs
-agent-browser click @e20                       # a day cell — aria-label "Create event on <Month d, yyyy>"
-agent-browser snapshot                         # re-snapshot: the dialog re-issues refs
-agent-browser fill @e7 "Recipe check"          # the "Title" textbox
-agent-browser press Enter                      # submits the form
-agent-browser snapshot                         # assert a "9AMRecipe check" chip on that day
+agent-browser find first "[aria-label^='Create event on']" click   # a day cell — opens the dialog
+agent-browser find label "Title" fill "Recipe check"
+agent-browser press Enter                                          # submits the form
+agent-browser snapshot                                             # assert a "9AMRecipe check" chip on that day
 ```
+
+Use locators, not refs. `@eN` refs from `snapshot` are allocated per-snapshot and are invalid the moment the tree changes (and the tree does change — see both gotchas below). Snapshot to _read_ state; act via `find`.
 
 Two gotchas worth knowing before you burn a loop on them:
 
-- **Re-snapshot after the dialog opens, and submit with `press Enter`.** The dialog renders in a portal and its refs restart at `@e1`, colliding with the header's — clicking the "Create" button by ref can land on the header instead, which dismisses the dialog without saving.
+- **Submit with `press Enter`, not by clicking "Create".** The dialog renders in a portal and its refs restart at `@e1`, colliding with the header's — clicking the "Create" button by ref can land on the header's "Next" instead, which dismisses the dialog without saving.
 - **Nothing clock-derived is server-rendered.** The month label and the grid appear only after mount, so a snapshot taken too early shows a spinner. Give the page a second.
 
 Don't stop at `pnpm verify` — exercise the flow and observe the result.
@@ -87,7 +87,9 @@ That's the whole matrix. There is no mobile, desktop, or extension target, and n
 - **`agent/tools/*.ts` are snake_case on purpose** — eve derives the tool name the model sees from the filename. Every other TS/TSX file is kebab-case.
 - **No `any`, no non-null `!`, no `as` casts** — enforced by `.oxlintrc.json`, not just documented. Parse at boundaries with zod (stream events, tool payloads, persisted storage).
 - **Don't read the wall clock during a server render.** `new Date()` resolves in UTC on Vercel and locally in the browser; a date rendered in both passes will mismatch at a month boundary. Read it in an effect (see `calendar-app.tsx`).
-- **Add UI components only via `pnpm dlx shadcn@latest add <name>`** (base-vega registry, Base UI primitives — `render` prop, not `asChild`).
+- **Add UI components only via `pnpm dlx shadcn@latest add <name>`** (base-vega registry, Base UI primitives — `render` prop, not `asChild`). One exception to "never hand-edit generated files": the registry emits `as` casts, which `pnpm verify` rejects. Re-run `pnpm verify` after every `shadcn add` and fix what it flags. `src/components/ui/sonner.tsx` is the known case — re-adding it reintroduces two casts:
+  - `theme={theme as ToasterProps["theme"]}` → the local `toasterTheme()` narrowing helper.
+  - `style={{ ... } as React.CSSProperties}` → hoist to the local `toasterStyle` const, typed as an intersection of `React.CSSProperties` and a template-literal `Record` of `--*` keys to `string`.
 
 ## Map
 
