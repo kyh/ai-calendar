@@ -48,6 +48,7 @@ The streaming contract: the client sends the schedule snapshot as eve `clientCon
 
 ## Notes
 
+- Driving this repo with a coding agent? Start at [`AGENTS.md`](AGENTS.md) — quickstart, seeded state, `pnpm verify`, and a working agent-browser recipe.
 - UI: shadcn/ui **base-vega** style (Base UI primitives). Add components with `pnpm dlx shadcn@latest add <name>`.
 - Replace `public/og.jpg` and `public/favicon/` with your own brand assets before shipping a fork.
 - Never run `eve build` while `pnpm dev` is running — it corrupts eve's dev cache (fix: delete `.eve/` + `.workflow-data/` and restart).

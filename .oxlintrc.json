@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicolo-ribaudo/oxc/json-schema-for-oxfmt/npm/oxlint/configuration_schema.json",
+  "ignorePatterns": ["node_modules", "pnpm-lock.yaml", "*.tsbuildinfo", ".next", ".output", ".eve"],
+  "plugins": ["eslint", "typescript", "react", "nextjs", "oxc"],
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "typescript/no-non-null-assertion": "error",
+    "typescript/consistent-type-assertions": ["error", { "assertionStyle": "never" }]
+  }
+}

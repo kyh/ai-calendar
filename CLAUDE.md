@@ -35,16 +35,27 @@ Flow: chat panel `send({ message, clientContext: calendarSnapshot })` → eve ch
 ```bash
 pnpm dev          # dev server — boots Next.js AND the eve agent runtime
 pnpm build        # production build (Next). Vercel builds the eve service via withEve
-pnpm lint         # oxlint
-pnpm format:fix   # oxfmt
+pnpm verify       # the gate: typecheck · lint · format — run before every commit
+pnpm typecheck    # tsc --noEmit (covers agent/ too)
+pnpm lint         # oxlint, warnings are errors
+pnpm format:fix   # oxfmt --write (bare `pnpm format` only checks)
 ```
 
 **NEVER run `eve build` while `pnpm dev` is running** — it corrupts the eve dev workflow cache. If dev breaks mysteriously: delete `.eve/` + `.workflow-data/` and restart.
+
+## Agent-driven development
+
+`AGENTS.md` is the runnable guide — read it before driving this app. In short:
+
+- **Provisioning is `pnpm install && pnpm dev`.** No database, no auth, no bootstrap script.
+- **No login.** The store seeds ~8 events into `localStorage` (`ai-calendar-events`) on first rehydrate, so a fresh browser gets a populated calendar.
+- **Verify with `pnpm verify`, then drive the real UI** with `agent-browser` — the recipe (and its two portal/ref gotchas) is in `AGENTS.md`.
+- **Chat needs `AI_GATEWAY_API_KEY` in `.env.local`.** Without it the calendar is fully exercisable but every AI turn fails with an auth error — that's missing config, not a bug.
 
 ## Conventions
 
 - Path alias: `@/*` → `./src/*` — but files imported by `agent/` code MUST use relative imports (eve's compiler doesn't read tsconfig paths)
 - kebab-case filenames for TS/TSX; `agent/tools/*` are snake_case (eve derives tool names from filenames)
 - No `any`, no `!`, no `as` — zod-parse at boundaries (stream events, tool payloads, localStorage)
-- Add ui components ONLY via `pnpm dlx shadcn@latest add <name>` (base-vega registry); never hand-copy
+- Add ui components ONLY via `pnpm dlx shadcn@latest add <name>` (base-vega registry); never hand-copy. Registry output can contain `as` casts that `pnpm verify` rejects — re-run the gate after every add and fix what it flags (`AGENTS.md` lists the known `sonner.tsx` case)
 - Base UI idioms: `render` prop (not `asChild`), `data-open:`/`data-closed:` variants

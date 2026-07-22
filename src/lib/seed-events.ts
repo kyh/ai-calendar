@@ -1,9 +1,8 @@
-import { addDays, format, set, startOfWeek } from "date-fns";
+import { addDays, set, startOfWeek } from "date-fns";
 
+import { toLocalIso } from "@/lib/date";
 import type { CalendarEvent } from "@/lib/event";
 import type { EventColor } from "@/lib/event";
-
-const toLocalIso = (date: Date): string => format(date, "yyyy-MM-dd'T'HH:mm:ss");
 
 interface SeedSpec {
   title: string;
