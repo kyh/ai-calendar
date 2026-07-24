@@ -47,11 +47,11 @@ The store key is `ai-calendar-events`; the `seeded` flag inside it is what stops
 Static gate — run before every commit:
 
 ```sh
-pnpm verify         # typecheck · lint · format(check)
+pnpm verify         # typecheck · lint · format(check) · test
 pnpm build          # optional but cheap; catches prerender-only failures
 ```
 
-There is no test suite and no CI workflow in this repo, so `pnpm verify` + `pnpm build` is the whole automated safety net. `format` is `oxfmt --check` (it fails, it does not rewrite); use `pnpm format:fix` to apply.
+A vitest harness runs as part of `pnpm verify`, but no tests are written yet and there is no CI workflow, so `pnpm verify` + `pnpm build` is the whole automated safety net. `format` is `oxfmt --check` (it fails, it does not rewrite); use `pnpm format:fix` to apply.
 
 Runtime — drive the real UI with [agent-browser](https://github.com/vercel-labs/agent-browser). This sequence is verified working against `pnpm dev`:
 
