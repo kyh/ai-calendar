@@ -72,7 +72,7 @@ export const layoutDayEvents = (events: readonly CalendarEvent[], day: Date): Po
       );
       return { event, startMinutes, endMinutes };
     })
-    .sort((a, b) => a.startMinutes - b.startMinutes || b.endMinutes - a.endMinutes);
+    .toSorted((a, b) => a.startMinutes - b.startMinutes || b.endMinutes - a.endMinutes);
 
   const laneEnds: number[] = [];
   const placed = timed.map((item) => {
@@ -83,7 +83,12 @@ export const layoutDayEvents = (events: readonly CalendarEvent[], day: Date): Po
     } else {
       laneEnds[lane] = item.endMinutes;
     }
-    return { ...item, lane };
+    return {
+      event: item.event,
+      startMinutes: item.startMinutes,
+      endMinutes: item.endMinutes,
+      lane,
+    };
   });
 
   // Cluster = maximal run of transitively-overlapping events; every event in

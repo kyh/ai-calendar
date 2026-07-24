@@ -29,7 +29,7 @@ export const MonthView = ({ events, focusDate, onDayClick, onEventClick }: Month
       </div>
       <div className="grid flex-1 grid-cols-7" style={{ gridAutoRows: "minmax(0, 1fr)" }}>
         {days.map((day) => {
-          const dayEvents = eventsOnDay(events, day).sort((a, b) => {
+          const dayEvents = eventsOnDay(events, day).toSorted((a, b) => {
             if (a.allDay !== b.allDay) return a.allDay ? -1 : 1;
             return a.start.localeCompare(b.start);
           });

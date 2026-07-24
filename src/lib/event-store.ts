@@ -27,7 +27,7 @@ interface EventStoreState {
 }
 
 const sortByStart = (events: CalendarEvent[]): CalendarEvent[] =>
-  [...events].sort((a, b) => a.start.localeCompare(b.start));
+  events.toSorted((a, b) => a.start.localeCompare(b.start));
 
 /**
  * localStorage boundary: every persisted event is zod-parsed on read and any

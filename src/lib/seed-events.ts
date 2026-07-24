@@ -95,8 +95,8 @@ export const seedEvents = (): CalendarEvent[] => {
       start: toLocalIso(start),
       end: toLocalIso(end),
       allDay: seed.allDay ?? false,
-      ...(seed.description === undefined ? {} : { description: seed.description }),
-      ...(seed.color === undefined ? {} : { color: seed.color }),
+      description: seed.description,
+      color: seed.color,
     };
   });
 };
