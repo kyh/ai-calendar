@@ -168,7 +168,7 @@ export const ChatPanel = () => {
       return;
     }
     const clientContext = buildCalendarContext(useEventStore.getState().events);
-    agent.send({ message: trimmed, clientContext }).catch(() => undefined); // failures surface via status/error/onError
+    agent.send(trimmed, { clientContext }).catch(() => undefined); // failures surface via status/error/onError
     setInput("");
   };
 
