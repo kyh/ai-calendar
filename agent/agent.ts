@@ -1,7 +1,11 @@
 import { createGateway } from "ai";
 import { defineAgent, defineDynamic } from "eve";
+import { z } from "zod";
 
 const MODEL_ID = "openai/gpt-5.1-instant";
+
+/** A usable BYO gateway key admitted by the channel verifier. */
+const gatewayApiKeySchema = z.string().min(1);
 
 /**
  * Runtime config for this app's agent. Identity comes from package.json
@@ -21,11 +25,11 @@ export default defineAgent({
     events: {
       "step.started": (_event, ctx) => {
         const auth = ctx.session.auth.current ?? ctx.session.auth.initiator;
-        const gatewayApiKey = auth?.attributes["gatewayApiKey"];
-        if (typeof gatewayApiKey !== "string" || gatewayApiKey.length === 0) {
+        const gatewayApiKey = gatewayApiKeySchema.safeParse(auth?.attributes["gatewayApiKey"]);
+        if (!gatewayApiKey.success) {
           return MODEL_ID; // fall back to the server-credentialed model
         }
-        return createGateway({ apiKey: gatewayApiKey })(MODEL_ID);
+        return createGateway({ apiKey: gatewayApiKey.data })(MODEL_ID);
       },
     },
   }),

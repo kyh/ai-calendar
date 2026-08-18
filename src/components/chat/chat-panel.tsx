@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { MessageStreamEvent, SubagentChildEventStreamEvent } from "eve/client";
 import type { EveMessage, EveMessagePart } from "eve/react";
 import { useEveAgent } from "eve/react";
 import {
@@ -56,37 +57,19 @@ const resolveAuthHeaders = (): Readonly<Record<string, string>> => {
 // zod-parsed against the shared schemas before touching the store.
 // -----------------------------------------------------------------------------
 
-const toolResultEventSchema = z.object({
-  type: z.literal("action.result"),
-  data: z.object({
-    status: z.enum(["completed", "failed", "rejected"]),
-    result: z.object({
-      kind: z.literal("tool-result"),
-      toolName: z.string(),
-      output: z.unknown(),
-      isError: z.boolean().optional(),
-    }),
-  }),
-});
+/** Events under `subagent.event` arrive without the durable stream stamp. */
+type AgentStreamEvent = MessageStreamEvent | SubagentChildEventStreamEvent["data"]["event"];
 
-/** `subagent.event` wraps a child session's stream event under `data.event`. */
-const subagentEventSchema = z.object({
-  type: z.literal("subagent.event"),
-  data: z.object({ event: z.unknown() }),
-});
-
-const applyToolResult = (event: unknown): void => {
+const applyToolResult = (event: AgentStreamEvent): void => {
   // Delegation is forbidden by the instructions, but if the model strays,
   // unwrap the child's events so its tool results still reach the store.
-  const wrapped = subagentEventSchema.safeParse(event);
-  if (wrapped.success) {
-    applyToolResult(wrapped.data.data.event);
+  if (event.type === "subagent.event") {
+    applyToolResult(event.data.event);
     return;
   }
-  const parsed = toolResultEventSchema.safeParse(event);
-  if (!parsed.success) return;
-  const { status, result } = parsed.data.data;
-  if (status !== "completed" || result.isError === true) return;
+  if (event.type !== "action.result") return;
+  const { status, result } = event.data;
+  if (status !== "completed" || result.kind !== "tool-result" || result.isError === true) return;
 
   const store = useEventStore.getState();
   switch (result.toolName) {
@@ -297,11 +280,18 @@ function ChatMessage({ message }: { message: EveMessage }) {
 
 type DynamicToolPart = Extract<EveMessagePart, { type: "dynamic-tool" }>;
 
-const TOOL_META: Record<string, { icon: typeof CalendarPlusIcon; active: string; done: string }> = {
+const calendarToolNameSchema = z.enum(["create_event", "update_event", "delete_event"]);
+
+type CalendarToolName = z.infer<typeof calendarToolNameSchema>;
+
+const TOOL_META = {
   create_event: { icon: CalendarPlusIcon, active: "Creating event", done: "Created event" },
   update_event: { icon: CalendarCheckIcon, active: "Updating event", done: "Updated event" },
   delete_event: { icon: CalendarMinusIcon, active: "Deleting event", done: "Deleted event" },
-};
+} satisfies Record<
+  CalendarToolName,
+  { icon: typeof CalendarPlusIcon; active: string; done: string }
+>;
 
 /** Loose view of tool inputs, for the chip detail line only. */
 const toolInputPreviewSchema = z.object({
@@ -312,8 +302,9 @@ const toolInputPreviewSchema = z.object({
 function ToolChip({ part }: { part: DynamicToolPart }) {
   const events = useEventStore((state) => state.events);
 
-  const meta = TOOL_META[part.toolName];
-  if (!meta) return null;
+  const toolName = calendarToolNameSchema.safeParse(part.toolName);
+  if (!toolName.success) return null;
+  const meta = TOOL_META[toolName.data];
 
   const done = part.state === "output-available";
   const failed = part.state === "output-error" || part.state === "output-denied";
@@ -325,7 +316,7 @@ function ToolChip({ part }: { part: DynamicToolPart }) {
     const input = toolInputPreviewSchema.safeParse(part.input);
     if (input.success) {
       detail =
-        part.toolName === "create_event"
+        toolName.data === "create_event"
           ? (input.data.title ?? "")
           : (events.find((e) => e.id === input.data.id)?.title ?? "");
     }

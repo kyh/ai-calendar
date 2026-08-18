@@ -162,8 +162,8 @@ const EventForm = ({
         start: toLocalIso(start),
         end: toLocalIso(end),
         allDay: values.allDay,
-        ...(description.length > 0 ? { description } : {}),
-        ...(values.color !== "default" ? { color: values.color } : {}),
+        description: description.length > 0 ? description : undefined,
+        color: values.color === "default" ? undefined : values.color,
       };
       addEvent(input);
     }
