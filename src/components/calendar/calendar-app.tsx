@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { addMonths, addWeeks, set } from "date-fns";
+import { useState, useSyncExternalStore } from "react";
+import { addMonths, addWeeks, set, startOfToday } from "date-fns";
 
 import { CalendarHeader, type CalendarView } from "@/components/calendar/calendar-header";
 import { EventDialog, type EventDialogState } from "@/components/calendar/event-dialog";
@@ -12,27 +12,37 @@ import { Spinner } from "@/components/ui/spinner";
 import type { CalendarEvent } from "@/lib/event";
 import { useEventStore } from "@/lib/event-store";
 
+/** The "store" never changes; only the server/client snapshot split matters. */
+const subscribeToNothing = () => () => {};
+
 export const CalendarApp = () => {
   const events = useEventStore((store) => store.events);
   const hasHydrated = useEventStore((store) => store.hasHydrated);
   const [view, setView] = useState<CalendarView>("month");
-  // `null` until mounted: the wall clock differs between the server render
-  // (UTC on Vercel) and the browser's local zone, so at a month/week boundary
-  // an SSR'd date label would disagree with the client and break hydration.
-  // Reading the clock in an effect keeps every clock-derived value off the server.
-  const [focusDate, setFocusDate] = useState<Date | null>(null);
+  // The wall clock differs between the server render (UTC on Vercel) and the
+  // browser's local zone, so at a month/week boundary an SSR'd date label would
+  // disagree with the client and break hydration. `useSyncExternalStore` renders
+  // the server snapshot (`false`) on the server and through hydration, then
+  // flips to the client snapshot, keeping every clock-derived value off the server.
+  const isBrowser = useSyncExternalStore(
+    subscribeToNothing,
+    () => true,
+    () => false,
+  );
+  // Only a deliberate navigation is stored; "today" stays derived.
+  const [focusOverride, setFocusOverride] = useState<Date | null>(null);
   const [chatOpen, setChatOpen] = useState(true);
   const [dialogState, setDialogState] = useState<EventDialogState>({
     mode: "closed",
   });
 
-  useEffect(() => setFocusDate(new Date()), []);
+  const focusDate = focusOverride ?? (isBrowser ? startOfToday() : null);
 
   const step = (direction: 1 | -1) => {
-    setFocusDate((current) => {
-      if (current === null) return null;
-      return view === "month" ? addMonths(current, direction) : addWeeks(current, direction);
-    });
+    if (focusDate === null) return;
+    setFocusOverride(
+      view === "month" ? addMonths(focusDate, direction) : addWeeks(focusDate, direction),
+    );
   };
 
   const openCreate = (start: Date) => setDialogState({ mode: "create", start, allDay: false });
@@ -48,7 +58,7 @@ export const CalendarApp = () => {
         onViewChange={setView}
         onPrev={() => step(-1)}
         onNext={() => step(1)}
-        onToday={() => setFocusDate(new Date())}
+        onToday={() => setFocusOverride(null)}
         onToggleChat={() => setChatOpen((open) => !open)}
       />
       <div className="flex min-h-0 flex-1">

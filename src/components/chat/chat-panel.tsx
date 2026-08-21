@@ -137,9 +137,18 @@ export const ChatPanel = () => {
   const isLoading = status === "submitted" || status === "streaming";
   const showKeyNotice = status === "error" && error !== undefined && isAuthError(error);
 
+  // Pin to the bottom off the DOM rather than off message state: streaming
+  // appends text into an existing node, and the "Thinking…" row and tool chips
+  // change height on their own schedule.
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [data.messages, status]);
+    const container = scrollRef.current;
+    if (container === null) return;
+    const observer = new MutationObserver(() =>
+      container.scrollTo({ top: container.scrollHeight }),
+    );
+    observer.observe(container, { childList: true, subtree: true, characterData: true });
+    return () => observer.disconnect();
+  }, []);
 
   const needsKey = !apiKey && process.env.NODE_ENV !== "development";
 
