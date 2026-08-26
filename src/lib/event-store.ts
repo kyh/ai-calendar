@@ -102,10 +102,12 @@ export const useEventStore = create<EventStoreState>()(
           seeded: parsed.data.seeded ?? false,
         };
       },
-      onRehydrateStorage: () => (state, error) => {
-        if (error || !state) return;
-        if (!state.seeded) state.seed();
-        state.setHasHydrated(true);
+      // An unreadable payload calls back with no state; falling back to the
+      // pre-hydration store boots a seeded calendar instead of spinning forever.
+      onRehydrateStorage: (initial) => (state) => {
+        const store = state ?? initial;
+        if (!store.seeded) store.seed();
+        store.setHasHydrated(true);
       },
     },
   ),

@@ -35,7 +35,8 @@ Flow: chat panel `send({ message, clientContext: calendarSnapshot })` → eve ch
 ```bash
 pnpm dev          # dev server — boots Next.js AND the eve agent runtime
 pnpm build        # production build (Next). Vercel builds the eve service via withEve
-pnpm verify       # the gate: typecheck · lint · format — run before every commit
+pnpm verify       # the gate: typecheck · lint · format · test — run before every commit
+pnpm test         # node:test over src/**/*.test.ts (fails if the glob matches nothing)
 pnpm typecheck    # tsc --noEmit (covers agent/ too)
 pnpm lint         # oxlint, warnings are errors
 pnpm format:fix   # oxfmt --write (bare `pnpm format` only checks)

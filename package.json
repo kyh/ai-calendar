@@ -25,8 +25,8 @@
     "lint:fix": "oxlint --fix",
     "format": "oxfmt --check",
     "format:fix": "oxfmt --write",
-    "test": "node --import tsx --test 'src/**/*.test.ts'",
-    "verify": "pnpm typecheck && pnpm lint && pnpm format"
+    "test": "node -e \"if(require('node:fs').globSync('src/**/*.test.ts').length===0){console.error('no test files match src/**/*.test.ts');process.exit(1)}\" && node --import tsx --test 'src/**/*.test.ts'",
+    "verify": "pnpm typecheck && pnpm lint && pnpm format && pnpm test"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

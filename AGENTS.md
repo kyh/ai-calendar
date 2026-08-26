@@ -47,11 +47,11 @@ The store key is `ai-calendar-events`; the `seeded` flag inside it is what stops
 Static gate — run before every commit:
 
 ```sh
-pnpm verify         # typecheck · lint · format(check)
+pnpm verify         # typecheck · lint · format(check) · test
 pnpm build          # optional but cheap; catches prerender-only failures
 ```
 
-`pnpm test` is wired to Node's built-in runner (`node --import tsx --test 'src/**/*.test.ts'`) but no tests are written yet, so it exits non-zero and is deliberately left out of `pnpm verify` — add `&& pnpm test` back to `verify` with the first test file. There is no CI workflow, so `pnpm verify` + `pnpm build` is the whole automated safety net. `format` is `oxfmt --check` (it fails, it does not rewrite); use `pnpm format:fix` to apply.
+`pnpm test` runs Node's built-in runner over `src/**/*.test.ts` (`src/lib/date.test.ts`, `src/lib/event-store.test.ts`) and is part of `verify`. It fails when the glob matches nothing, so a deleted or renamed suite goes red instead of reporting `tests 0` and exiting 0. There is no CI workflow, so `pnpm verify` + `pnpm build` is the whole automated safety net. `format` is `oxfmt --check` (it fails, it does not rewrite); use `pnpm format:fix` to apply.
 
 Runtime — drive the real UI with [agent-browser](https://github.com/vercel-labs/agent-browser). This sequence is verified working against `pnpm dev`:
 
