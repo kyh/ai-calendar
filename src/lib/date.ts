@@ -1,6 +1,6 @@
 import {
   addDays,
-  differenceInMinutes,
+  differenceInCalendarDays,
   eachDayOfInterval,
   endOfMonth,
   endOfWeek,
@@ -54,22 +54,25 @@ export interface PositionedEvent {
 }
 
 /**
+ * Offset from midnight on `day`'s wall clock. Elapsed minutes drift by an hour
+ * either way across a DST boundary, but the week grid is 24 fixed hour rows.
+ */
+const wallClockMinutes = (date: Date, day: Date): number =>
+  differenceInCalendarDays(date, day) * 24 * 60 + date.getHours() * 60 + date.getMinutes();
+
+/**
  * Lays out one day's timed events into overlap lanes for the week view.
  * Greedy interval-partitioning: sort by start, place each event in the
  * first lane that is free; events sharing a cluster split the width.
  */
 export const layoutDayEvents = (events: readonly CalendarEvent[], day: Date): PositionedEvent[] => {
-  const dayStart = startOfDay(day);
   const timed = eventsOnDay(events, day)
     .filter((event) => !event.allDay)
     .map((event) => {
       const start = parseISO(event.start);
       const end = parseISO(event.end);
-      const startMinutes = Math.max(0, differenceInMinutes(start, dayStart));
-      const endMinutes = Math.min(
-        24 * 60,
-        Math.max(differenceInMinutes(end, dayStart), startMinutes + 30),
-      );
+      const startMinutes = Math.max(0, wallClockMinutes(start, day));
+      const endMinutes = Math.min(24 * 60, Math.max(wallClockMinutes(end, day), startMinutes + 30));
       return { event, startMinutes, endMinutes };
     })
     .toSorted((a, b) => a.startMinutes - b.startMinutes || b.endMinutes - a.endMinutes);
