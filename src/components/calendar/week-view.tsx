@@ -6,7 +6,7 @@ import { format, isToday, set } from "date-fns";
 import { eventColorClass } from "@/components/calendar/event-styles";
 import { eventsOnDay, formatEventTime, layoutDayEvents, weekDays } from "@/lib/date";
 import type { CalendarEvent } from "@/lib/event";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
 const HOUR_HEIGHT_PX = 48;
 

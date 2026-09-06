@@ -28,7 +28,7 @@ import {
 } from "@/lib/assistant-schemas";
 import { buildCalendarContext } from "@/lib/calendar-context";
 import { useEventStore } from "@/lib/event-store";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
 const examplePrompts = [
   "Lunch with Sam tomorrow at noon",

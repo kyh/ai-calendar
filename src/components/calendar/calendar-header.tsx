@@ -5,7 +5,7 @@ import { ChevronLeftIcon, ChevronRightIcon, MessageSquareIcon } from "lucide-rea
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { formatRangeLabel } from "@/lib/date";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
 export type CalendarView = "month" | "week";
 
