@@ -5,7 +5,7 @@ import { format, isSameDay, isSameMonth, isToday, parseISO } from "date-fns";
 import { eventColorClass } from "@/components/calendar/event-styles";
 import { eventsOnDay, formatEventTime, monthGridDays } from "@/lib/date";
 import type { CalendarEvent } from "@/lib/event";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
 const MAX_CHIPS_PER_DAY = 3;
 
