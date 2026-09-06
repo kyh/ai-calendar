@@ -34,7 +34,7 @@
     "@vercel/speed-insights": "^2.0.0",
     "ai": "^7.0.84",
     "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
+    "cn": "^0.2.3",
     "date-fns": "^4.4.0",
     "eve": "^0.47.3",
     "lucide-react": "^1.35.0",
@@ -44,7 +44,6 @@
     "react-day-picker": "^10.0.1",
     "react-dom": "^19.2.8",
     "sonner": "^2.0.8",
-    "tailwind-merge": "^3.6.0",
     "zod": "^4.5.2",
     "zustand": "^5.0.15"
   },
