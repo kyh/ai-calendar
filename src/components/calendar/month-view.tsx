@@ -30,19 +30,24 @@ export const MonthView = ({ events, focusDate, onDayClick, onEventClick }: Month
       <div className="grid flex-1 grid-cols-7" style={{ gridAutoRows: "minmax(0, 1fr)" }}>
         {days.map((day) => {
           const dayEvents = eventsOnDay(events, day).toSorted((a, b) => {
-            if (a.allDay !== b.allDay) return a.allDay ? -1 : 1;
+            if (a.allDay !== b.allDay) {
+              return a.allDay ? -1 : 1;
+            }
             return a.start.localeCompare(b.start);
           });
           const overflow = dayEvents.length - MAX_CHIPS_PER_DAY;
           return (
             <div
               key={day.toISOString()}
+              // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the cell holds event-chip buttons; a real button cannot nest them
               role="button"
               tabIndex={0}
               aria-label={`Create event on ${format(day, "MMMM d, yyyy")}`}
               onClick={() => onDayClick(day)}
               onKeyDown={(keyEvent) => {
-                if (keyEvent.key === "Enter") onDayClick(day);
+                if (keyEvent.key === "Enter") {
+                  onDayClick(day);
+                }
               }}
               className={cn(
                 "flex min-h-24 cursor-pointer flex-col gap-1 overflow-hidden border-r border-b p-1 text-left transition-colors last:border-r-0 hover:bg-muted/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",

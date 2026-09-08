@@ -22,7 +22,7 @@ interface ApiKeyDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
+export const ApiKeyDialog = ({ open, onOpenChange }: ApiKeyDialogProps) => {
   const [apiKey, setApiKey, removeApiKey] = useLocalStorage(GATEWAY_API_KEY_STORAGE_KEY, "");
   const [apiKeyInput, setApiKeyInput] = React.useState(apiKey);
 
@@ -85,4 +85,4 @@ export function ApiKeyDialog({ open, onOpenChange }: ApiKeyDialogProps) {
       </DialogContent>
     </Dialog>
   );
-}
+};

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // Relative (not `@/`) so eve's compiler can bundle this module for agent
 // tools — eve does not read tsconfig path aliases.
-import { calendarEventInputSchema, calendarEventPatchSchema, calendarEventSchema } from "./event";
+import { calendarEventPatchSchema, calendarEventSchema } from "./event";
 
 // -----------------------------------------------------------------------------
 // The client<->agent contract, shared by both sides:
@@ -10,12 +10,9 @@ import { calendarEventInputSchema, calendarEventPatchSchema, calendarEventSchema
 //   schemas as `outputSchema` (what `execute` returns).
 // - The chat panel zod-parses every `action.result` tool output against the
 //   payload schemas before touching the zustand store.
-// Note: agent/ lives outside src/, so tools import this file relatively
-// (`../../src/lib/assistant-schemas`) — eve's compiler does not read
-// tsconfig path aliases.
 // -----------------------------------------------------------------------------
 
-export const createEventInputSchema = calendarEventInputSchema;
+export { calendarEventInputSchema as createEventInputSchema } from "./event";
 
 export const updateEventInputSchema = z.object({
   id: z.string().min(1).describe("Id of the event to update"),

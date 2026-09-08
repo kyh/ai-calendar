@@ -10,8 +10,8 @@ import {
   monthGridDays,
   toLocalIso,
   weekDays,
-  type PositionedEvent,
 } from "@/lib/date";
+import type { PositionedEvent } from "@/lib/date";
 import type { CalendarEvent } from "@/lib/event";
 
 /** DST assertions need a fixed zone; the runner otherwise inherits the machine's. */
@@ -21,19 +21,19 @@ const SPRING_FORWARD = new Date(2026, 2, 8);
 const FALL_BACK = new Date(2026, 10, 1);
 
 const timed = (id: string, start: string, end: string): CalendarEvent => ({
-  id,
-  title: id,
-  start,
-  end,
   allDay: false,
+  end,
+  id,
+  start,
+  title: id,
 });
 
 const allDay = (id: string, start: string, end: string): CalendarEvent => ({
-  id,
-  title: id,
-  start,
-  end,
   allDay: true,
+  end,
+  id,
+  start,
+  title: id,
 });
 
 const ymd = (date: Date): string => format(date, "yyyy-MM-dd");
@@ -42,11 +42,11 @@ const ids = (events: readonly CalendarEvent[]): string[] => events.map((event) =
 
 const blocks = (positioned: readonly PositionedEvent[]) =>
   positioned.map(({ event, startMinutes, durationMinutes, lane, laneCount }) => ({
-    id: event.id,
-    startMinutes,
     durationMinutes,
+    id: event.id,
     lane,
     laneCount,
+    startMinutes,
   }));
 
 describe("monthGridDays", () => {
@@ -131,10 +131,10 @@ describe("layoutDayEvents", () => {
     );
 
     assert.deepEqual(blocks(springForward), [
-      { id: "a", startMinutes: 540, durationMinutes: 60, lane: 0, laneCount: 1 },
+      { durationMinutes: 60, id: "a", lane: 0, laneCount: 1, startMinutes: 540 },
     ]);
     assert.deepEqual(blocks(fallBack), [
-      { id: "a", startMinutes: 540, durationMinutes: 60, lane: 0, laneCount: 1 },
+      { durationMinutes: 60, id: "a", lane: 0, laneCount: 1, startMinutes: 540 },
     ]);
   });
 
@@ -151,10 +151,10 @@ describe("layoutDayEvents", () => {
     );
 
     assert.deepEqual(blocks(positioned), [
-      { id: "a", startMinutes: 540, durationMinutes: 60, lane: 0, laneCount: 2 },
-      { id: "b", startMinutes: 570, durationMinutes: 60, lane: 1, laneCount: 2 },
-      { id: "c", startMinutes: 615, durationMinutes: 45, lane: 0, laneCount: 2 },
-      { id: "solo", startMinutes: 720, durationMinutes: 60, lane: 0, laneCount: 1 },
+      { durationMinutes: 60, id: "a", lane: 0, laneCount: 2, startMinutes: 540 },
+      { durationMinutes: 60, id: "b", lane: 1, laneCount: 2, startMinutes: 570 },
+      { durationMinutes: 45, id: "c", lane: 0, laneCount: 2, startMinutes: 615 },
+      { durationMinutes: 60, id: "solo", lane: 0, laneCount: 1, startMinutes: 720 },
     ]);
   });
 
@@ -170,9 +170,9 @@ describe("layoutDayEvents", () => {
     );
 
     assert.deepEqual(blocks(positioned), [
-      { id: "outer", startMinutes: 540, durationMinutes: 180, lane: 0, laneCount: 2 },
-      { id: "twin", startMinutes: 540, durationMinutes: 60, lane: 1, laneCount: 2 },
-      { id: "inner", startMinutes: 600, durationMinutes: 60, lane: 1, laneCount: 2 },
+      { durationMinutes: 180, id: "outer", lane: 0, laneCount: 2, startMinutes: 540 },
+      { durationMinutes: 60, id: "twin", lane: 1, laneCount: 2, startMinutes: 540 },
+      { durationMinutes: 60, id: "inner", lane: 1, laneCount: 2, startMinutes: 600 },
     ]);
   });
 
@@ -186,8 +186,8 @@ describe("layoutDayEvents", () => {
     );
 
     assert.deepEqual(blocks(positioned), [
-      { id: "first", startMinutes: 540, durationMinutes: 60, lane: 0, laneCount: 1 },
-      { id: "second", startMinutes: 600, durationMinutes: 60, lane: 0, laneCount: 1 },
+      { durationMinutes: 60, id: "first", lane: 0, laneCount: 1, startMinutes: 540 },
+      { durationMinutes: 60, id: "second", lane: 0, laneCount: 1, startMinutes: 600 },
     ]);
   });
 
@@ -196,13 +196,13 @@ describe("layoutDayEvents", () => {
     const sliver = timed("sliver", "2026-03-10T09:00:00", "2026-03-10T09:05:00");
 
     assert.deepEqual(blocks(layoutDayEvents([overnight], new Date(2026, 2, 9))), [
-      { id: "overnight", startMinutes: 1320, durationMinutes: 120, lane: 0, laneCount: 1 },
+      { durationMinutes: 120, id: "overnight", lane: 0, laneCount: 1, startMinutes: 1320 },
     ]);
     assert.deepEqual(blocks(layoutDayEvents([overnight], new Date(2026, 2, 10))), [
-      { id: "overnight", startMinutes: 0, durationMinutes: 120, lane: 0, laneCount: 1 },
+      { durationMinutes: 120, id: "overnight", lane: 0, laneCount: 1, startMinutes: 0 },
     ]);
     assert.deepEqual(blocks(layoutDayEvents([sliver], new Date(2026, 2, 10))), [
-      { id: "sliver", startMinutes: 540, durationMinutes: 30, lane: 0, laneCount: 1 },
+      { durationMinutes: 30, id: "sliver", lane: 0, laneCount: 1, startMinutes: 540 },
     ]);
   });
 

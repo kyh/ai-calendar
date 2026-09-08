@@ -1,5 +1,5 @@
 import { CalendarApp } from "@/components/calendar/calendar-app";
 
-export default function Page() {
-  return <CalendarApp />;
-}
+const Page = () => <CalendarApp />;
+
+export default Page;
