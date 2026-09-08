@@ -43,7 +43,9 @@ const examplePrompts = [
  * resolver once at store creation, so React state would go stale.
  */
 const resolveAuthHeaders = (): Readonly<Record<string, string>> => {
-  if (typeof window === "undefined") return {};
+  if (typeof window === "undefined") {
+    return {};
+  }
   const key = window.localStorage.getItem(GATEWAY_API_KEY_STORAGE_KEY);
   return key !== null && key.length > 0 ? { authorization: `Bearer ${key}` } : {};
 };
@@ -67,39 +69,54 @@ const applyToolResult = (event: AgentStreamEvent): void => {
     applyToolResult(event.data.event);
     return;
   }
-  if (event.type !== "action.result") return;
+  if (event.type !== "action.result") {
+    return;
+  }
   const { status, result } = event.data;
-  if (status !== "completed" || result.kind !== "tool-result" || result.isError === true) return;
+  if (status !== "completed" || result.kind !== "tool-result" || result.isError === true) {
+    return;
+  }
 
   const store = useEventStore.getState();
   switch (result.toolName) {
     case "create_event": {
       const payload = createEventPayloadSchema.safeParse(result.output);
-      if (!payload.success) return;
+      if (!payload.success) {
+        return;
+      }
       store.upsertEvent(payload.data.event);
       toast.success(`Created "${payload.data.event.title}"`);
       break;
     }
     case "update_event": {
       const payload = updateEventPayloadSchema.safeParse(result.output);
-      if (!payload.success) return;
+      if (!payload.success) {
+        return;
+      }
       const { id, patch } = payload.data;
-      const event = store.events.find((e) => e.id === id);
-      if (!event) {
+      const existing = store.events.find((e) => e.id === id);
+      if (!existing) {
         toast.error("The assistant tried to update an event that no longer exists");
         return;
       }
       store.updateEvent(id, patch);
-      toast.success(`Updated "${patch.title ?? event.title}"`);
+      toast.success(`Updated "${patch.title ?? existing.title}"`);
       break;
     }
     case "delete_event": {
       const payload = deleteEventPayloadSchema.safeParse(result.output);
-      if (!payload.success) return;
-      const event = store.events.find((e) => e.id === payload.data.id);
-      if (!event) return;
-      store.deleteEvent(event.id);
-      toast.success(`Deleted "${event.title}"`);
+      if (!payload.success) {
+        return;
+      }
+      const existing = store.events.find((e) => e.id === payload.data.id);
+      if (!existing) {
+        return;
+      }
+      store.deleteEvent(existing.id);
+      toast.success(`Deleted "${existing.title}"`);
+      break;
+    }
+    default: {
       break;
     }
   }
@@ -111,7 +128,99 @@ const applyToolResult = (event: AgentStreamEvent): void => {
  * All of them route back to the key dialog.
  */
 const isAuthError = (error: Error): boolean =>
-  /unauthorized|forbidden|authentication|api.?key|credential|401|403/i.test(error.message);
+  /unauthorized|forbidden|authentication|api.?key|credential|401|403/iu.test(error.message);
+
+// -----------------------------------------------------------------------------
+// Message rendering — eve's default reducer projects `data.messages` in the
+// AI SDK UIMessage convention: text parts plus `dynamic-tool` parts.
+// -----------------------------------------------------------------------------
+
+type DynamicToolPart = Extract<EveMessagePart, { type: "dynamic-tool" }>;
+
+const calendarToolNameSchema = z.enum(["create_event", "update_event", "delete_event"]);
+
+type CalendarToolName = z.infer<typeof calendarToolNameSchema>;
+
+const TOOL_META = {
+  create_event: { active: "Creating event", done: "Created event", icon: CalendarPlusIcon },
+  delete_event: { active: "Deleting event", done: "Deleted event", icon: CalendarMinusIcon },
+  update_event: { active: "Updating event", done: "Updated event", icon: CalendarCheckIcon },
+} satisfies Record<
+  CalendarToolName,
+  { icon: typeof CalendarPlusIcon; active: string; done: string }
+>;
+
+/** Loose view of tool inputs, for the chip detail line only. */
+const toolInputPreviewSchema = z.object({
+  id: z.string().optional(),
+  title: z.string().optional(),
+});
+
+const ToolChip = ({ part }: { part: DynamicToolPart }) => {
+  const events = useEventStore((state) => state.events);
+
+  const toolName = calendarToolNameSchema.safeParse(part.toolName);
+  if (!toolName.success) {
+    return null;
+  }
+  const meta = TOOL_META[toolName.data];
+
+  const done = part.state === "output-available";
+  const failed = part.state === "output-error" || part.state === "output-denied";
+  let label = `${meta.active}…`;
+  if (done) {
+    label = meta.done;
+  } else if (failed) {
+    label = "Something went wrong";
+  }
+  const Icon = failed ? CircleAlertIcon : meta.icon;
+
+  let detail = "";
+  if (part.state === "input-available" || part.state === "output-available") {
+    const input = toolInputPreviewSchema.safeParse(part.input);
+    if (input.success) {
+      detail =
+        toolName.data === "create_event"
+          ? (input.data.title ?? "")
+          : (events.find((e) => e.id === input.data.id)?.title ?? "");
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <Icon className={cn("size-3.5 shrink-0", failed && "text-destructive")} />
+      <span className="truncate">
+        {label}
+        {detail ? ` — ${detail}` : ""}
+      </span>
+    </div>
+  );
+};
+
+const ChatMessage = ({ message }: { message: EveMessage }) => (
+  <div className={cn("flex flex-col gap-1.5", message.role === "user" && "items-end")}>
+    {message.parts.map((part, index) => {
+      const key = `${message.id}-${index}`;
+      if (part.type === "text" && part.text.length > 0) {
+        return (
+          <div
+            key={key}
+            className={cn(
+              "max-w-[85%] rounded-lg px-2.5 py-1.5 text-sm whitespace-pre-wrap",
+              message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted",
+            )}
+          >
+            {part.text}
+          </div>
+        );
+      }
+      if (part.type === "dynamic-tool") {
+        return <ToolChip key={key} part={part} />;
+      }
+      return null;
+    })}
+  </div>
+);
 
 export const ChatPanel = () => {
   const [apiKey, , removeApiKey] = useLocalStorage(GATEWAY_API_KEY_STORAGE_KEY, "");
@@ -121,7 +230,6 @@ export const ChatPanel = () => {
 
   const agent = useEveAgent({
     headers: resolveAuthHeaders,
-    onEvent: applyToolResult,
     onError: (error) => {
       if (isAuthError(error)) {
         removeApiKey();
@@ -131,6 +239,7 @@ export const ChatPanel = () => {
         toast.error(error.message || "Something went wrong");
       }
     },
+    onEvent: applyToolResult,
   });
   const { data, status, error } = agent;
 
@@ -142,26 +251,34 @@ export const ChatPanel = () => {
   // change height on their own schedule.
   useEffect(() => {
     const container = scrollRef.current;
-    if (container === null) return;
+    if (container === null) {
+      return;
+    }
     const observer = new MutationObserver(() =>
       container.scrollTo({ top: container.scrollHeight }),
     );
-    observer.observe(container, { childList: true, subtree: true, characterData: true });
+    observer.observe(container, { characterData: true, childList: true, subtree: true });
     return () => observer.disconnect();
   }, []);
 
   const needsKey = !apiKey && process.env.NODE_ENV !== "development";
 
-  const send = (message: string) => {
+  const send = async (message: string) => {
     const trimmed = message.trim();
-    if (trimmed.length === 0 || isLoading) return;
+    if (trimmed.length === 0 || isLoading) {
+      return;
+    }
     if (needsKey) {
       setShowApiKeyDialog(true);
       return;
     }
     const clientContext = buildCalendarContext(useEventStore.getState().events);
-    agent.send(trimmed, { clientContext }).catch(() => undefined); // failures surface via status/error/onError
     setInput("");
+    try {
+      await agent.send(trimmed, { clientContext });
+    } catch {
+      // failures surface via status/error/onError
+    }
   };
 
   return (
@@ -236,7 +353,9 @@ export const ChatPanel = () => {
           value={input}
           onChange={(changeEvent) => setInput(changeEvent.target.value)}
           onFocus={() => {
-            if (needsKey) setShowApiKeyDialog(true);
+            if (needsKey) {
+              setShowApiKeyDialog(true);
+            }
           }}
           placeholder="Ask about your schedule…"
           aria-label="Message the assistant"
@@ -254,90 +373,3 @@ export const ChatPanel = () => {
     </div>
   );
 };
-
-// -----------------------------------------------------------------------------
-// Message rendering — eve's default reducer projects `data.messages` in the
-// AI SDK UIMessage convention: text parts plus `dynamic-tool` parts.
-// -----------------------------------------------------------------------------
-
-function ChatMessage({ message }: { message: EveMessage }) {
-  return (
-    <div className={cn("flex flex-col gap-1.5", message.role === "user" && "items-end")}>
-      {message.parts.map((part, index) => {
-        const key = `${message.id}-${index}`;
-        if (part.type === "text" && part.text.length > 0) {
-          return (
-            <div
-              key={key}
-              className={cn(
-                "max-w-[85%] rounded-lg px-2.5 py-1.5 text-sm whitespace-pre-wrap",
-                message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted",
-              )}
-            >
-              {part.text}
-            </div>
-          );
-        }
-        if (part.type === "dynamic-tool") {
-          return <ToolChip key={key} part={part} />;
-        }
-        return null;
-      })}
-    </div>
-  );
-}
-
-type DynamicToolPart = Extract<EveMessagePart, { type: "dynamic-tool" }>;
-
-const calendarToolNameSchema = z.enum(["create_event", "update_event", "delete_event"]);
-
-type CalendarToolName = z.infer<typeof calendarToolNameSchema>;
-
-const TOOL_META = {
-  create_event: { icon: CalendarPlusIcon, active: "Creating event", done: "Created event" },
-  update_event: { icon: CalendarCheckIcon, active: "Updating event", done: "Updated event" },
-  delete_event: { icon: CalendarMinusIcon, active: "Deleting event", done: "Deleted event" },
-} satisfies Record<
-  CalendarToolName,
-  { icon: typeof CalendarPlusIcon; active: string; done: string }
->;
-
-/** Loose view of tool inputs, for the chip detail line only. */
-const toolInputPreviewSchema = z.object({
-  title: z.string().optional(),
-  id: z.string().optional(),
-});
-
-function ToolChip({ part }: { part: DynamicToolPart }) {
-  const events = useEventStore((state) => state.events);
-
-  const toolName = calendarToolNameSchema.safeParse(part.toolName);
-  if (!toolName.success) return null;
-  const meta = TOOL_META[toolName.data];
-
-  const done = part.state === "output-available";
-  const failed = part.state === "output-error" || part.state === "output-denied";
-  const label = done ? meta.done : failed ? "Something went wrong" : `${meta.active}…`;
-  const Icon = failed ? CircleAlertIcon : meta.icon;
-
-  let detail = "";
-  if (part.state === "input-available" || part.state === "output-available") {
-    const input = toolInputPreviewSchema.safeParse(part.input);
-    if (input.success) {
-      detail =
-        toolName.data === "create_event"
-          ? (input.data.title ?? "")
-          : (events.find((e) => e.id === input.data.id)?.title ?? "");
-    }
-  }
-
-  return (
-    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-      <Icon className={cn("size-3.5 shrink-0", failed && "text-destructive")} />
-      <span className="truncate">
-        {label}
-        {detail ? ` — ${detail}` : ""}
-      </span>
-    </div>
-  );
-}

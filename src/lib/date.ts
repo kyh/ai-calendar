@@ -20,8 +20,8 @@ export const toLocalIso = (date: Date): string => format(date, "yyyy-MM-dd'T'HH:
 /** All days shown in a month grid: full weeks covering the month. */
 export const monthGridDays = (focus: Date): Date[] =>
   eachDayOfInterval({
-    start: startOfWeek(startOfMonth(focus)),
     end: endOfWeek(endOfMonth(focus)),
+    start: startOfWeek(startOfMonth(focus)),
   });
 
 /** The 7 days of the week containing `focus`. */
@@ -73,7 +73,7 @@ export const layoutDayEvents = (events: readonly CalendarEvent[], day: Date): Po
       const end = parseISO(event.end);
       const startMinutes = Math.max(0, wallClockMinutes(start, day));
       const endMinutes = Math.min(24 * 60, Math.max(wallClockMinutes(end, day), startMinutes + 30));
-      return { event, startMinutes, endMinutes };
+      return { endMinutes, event, startMinutes };
     })
     .toSorted((a, b) => a.startMinutes - b.startMinutes || b.endMinutes - a.endMinutes);
 
@@ -87,10 +87,10 @@ export const layoutDayEvents = (events: readonly CalendarEvent[], day: Date): Po
       laneEnds[lane] = item.endMinutes;
     }
     return {
-      event: item.event,
-      startMinutes: item.startMinutes,
       endMinutes: item.endMinutes,
+      event: item.event,
       lane,
+      startMinutes: item.startMinutes,
     };
   });
 
@@ -103,21 +103,25 @@ export const layoutDayEvents = (events: readonly CalendarEvent[], day: Date): Po
     const laneCount = Math.max(1, ...cluster.map((item) => item.lane + 1));
     for (const item of cluster) {
       results.push({
-        event: item.event,
-        startMinutes: item.startMinutes,
         durationMinutes: item.endMinutes - item.startMinutes,
+        event: item.event,
         lane: item.lane,
         laneCount,
+        startMinutes: item.startMinutes,
       });
     }
     cluster = [];
   };
   for (const item of placed) {
-    if (cluster.length > 0 && item.startMinutes >= clusterEnd) flush();
+    if (cluster.length > 0 && item.startMinutes >= clusterEnd) {
+      flush();
+    }
     cluster.push(item);
     clusterEnd = Math.max(clusterEnd, item.endMinutes);
   }
-  if (cluster.length > 0) flush();
+  if (cluster.length > 0) {
+    flush();
+  }
   return results;
 };
 
@@ -127,11 +131,15 @@ export const formatEventTime = (iso: string): string => {
 };
 
 export const formatRangeLabel = (focus: Date, view: "month" | "week"): string => {
-  if (view === "month") return format(focus, "MMMM yyyy");
+  if (view === "month") {
+    return format(focus, "MMMM yyyy");
+  }
   const days = weekDays(focus);
-  const first = days[0];
-  const last = days[6];
-  if (first === undefined || last === undefined) return format(focus, "MMMM yyyy");
+  const first = days.at(0);
+  const last = days.at(-1);
+  if (first === undefined || last === undefined) {
+    return format(focus, "MMMM yyyy");
+  }
   return first.getMonth() === last.getMonth()
     ? `${format(first, "MMM d")} – ${format(last, "d, yyyy")}`
     : `${format(first, "MMM d")} – ${format(last, "MMM d, yyyy")}`;

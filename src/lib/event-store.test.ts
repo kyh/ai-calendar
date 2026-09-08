@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { before, beforeEach, describe, test } from "node:test";
 
 import type { CalendarEvent } from "@/lib/event";
+import type * as EventStore from "@/lib/event-store";
 import { seedEvents } from "@/lib/seed-events";
 
 const STORAGE_KEY = "ai-calendar-events";
@@ -9,14 +10,14 @@ const STORAGE_KEY = "ai-calendar-events";
 const createMemoryStorage = (): Storage => {
   const entries = new Map<string, string>();
   return {
-    get length() {
-      return entries.size;
-    },
     clear: () => {
       entries.clear();
     },
     getItem: (key: string) => entries.get(key) ?? null,
-    key: (index: number) => Array.from(entries.keys()).at(index) ?? null,
+    key: (index: number) => [...entries.keys()].at(index) ?? null,
+    get length() {
+      return entries.size;
+    },
     removeItem: (key: string) => {
       entries.delete(key);
     },
@@ -26,7 +27,7 @@ const createMemoryStorage = (): Storage => {
   };
 };
 
-let useEventStore: typeof import("@/lib/event-store").useEventStore;
+let useEventStore: typeof EventStore.useEventStore;
 
 /** The store builds its persist storage at import, so localStorage must exist first. */
 before(async () => {
@@ -50,9 +51,12 @@ const writeStored = (payload: string): void => {
  */
 const reload = async (): Promise<void> => {
   const stored = globalThis.localStorage.getItem(STORAGE_KEY);
-  useEventStore.setState({ events: [], seeded: false, hasHydrated: false });
-  if (stored === null) globalThis.localStorage.removeItem(STORAGE_KEY);
-  else globalThis.localStorage.setItem(STORAGE_KEY, stored);
+  useEventStore.setState({ events: [], hasHydrated: false, seeded: false });
+  if (stored === null) {
+    globalThis.localStorage.removeItem(STORAGE_KEY);
+  } else {
+    globalThis.localStorage.setItem(STORAGE_KEY, stored);
+  }
   await useEventStore.persist.rehydrate();
 };
 
@@ -72,7 +76,9 @@ describe("rehydration", () => {
 
   test("the seed runs once, so a cleared calendar stays cleared", async () => {
     await reload();
-    for (const event of state().events) state().deleteEvent(event.id);
+    for (const event of state().events) {
+      state().deleteEvent(event.id);
+    }
     assert.deepEqual(state().events, []);
 
     await reload();
@@ -85,45 +91,45 @@ describe("rehydration", () => {
     writeStored(
       JSON.stringify({
         state: {
-          seeded: true,
           events: [
             {
-              id: "later",
-              title: "Later",
-              start: "2026-03-10T15:00:00",
+              allDay: false,
               end: "2026-03-10T16:00:00",
-              allDay: false,
+              id: "later",
+              start: "2026-03-10T15:00:00",
+              title: "Later",
             },
             {
+              allDay: false,
+              end: "2026-03-10T10:00:00",
               id: "blank-title",
-              title: "",
               start: "2026-03-10T09:00:00",
-              end: "2026-03-10T10:00:00",
-              allDay: false,
+              title: "",
             },
             {
+              allDay: false,
+              end: "2026-03-10T10:00:00",
               id: "bad-start",
-              title: "Bad start",
               start: "whenever",
-              end: "2026-03-10T10:00:00",
-              allDay: false,
+              title: "Bad start",
             },
             {
-              id: "earlier",
-              title: "Earlier",
-              start: "2026-03-10T08:00:00",
+              allDay: false,
               end: "2026-03-10T09:00:00",
-              allDay: false,
+              id: "earlier",
+              start: "2026-03-10T08:00:00",
+              title: "Earlier",
             },
             {
-              id: "no-all-day",
-              title: "Missing allDay",
-              start: "2026-03-10T11:00:00",
               end: "2026-03-10T12:00:00",
+              id: "no-all-day",
+              start: "2026-03-10T11:00:00",
+              title: "Missing allDay",
             },
             null,
             "not an event",
           ],
+          seeded: true,
         },
         version: 0,
       }),
@@ -139,16 +145,16 @@ describe("rehydration", () => {
     writeStored(
       JSON.stringify({
         state: {
-          seeded: true,
           events: [
             {
-              id: "legacy",
-              title: "Legacy",
-              startsAt: "2026-03-10T09:00:00",
-              endsAt: "2026-03-10T10:00:00",
               allDay: false,
+              endsAt: "2026-03-10T10:00:00",
+              id: "legacy",
+              startsAt: "2026-03-10T09:00:00",
+              title: "Legacy",
             },
           ],
+          seeded: true,
         },
         version: 0,
       }),
@@ -161,7 +167,7 @@ describe("rehydration", () => {
   });
 
   test("a persisted root of the wrong shape falls back to a fresh calendar", async () => {
-    writeStored(JSON.stringify({ state: { seeded: true, events: "nope" }, version: 0 }));
+    writeStored(JSON.stringify({ state: { events: "nope", seeded: true }, version: 0 }));
 
     await reload();
 
@@ -182,22 +188,22 @@ describe("rehydration", () => {
 describe("mutations", () => {
   beforeEach(async () => {
     globalThis.localStorage.clear();
-    writeStored(JSON.stringify({ state: { seeded: true, events: [] }, version: 0 }));
+    writeStored(JSON.stringify({ state: { events: [], seeded: true }, version: 0 }));
     await reload();
   });
 
   test("addEvent assigns an id and keeps the list ordered by start", () => {
     const late = state().addEvent({
-      title: "Late",
-      start: "2026-03-10T15:00:00",
-      end: "2026-03-10T16:00:00",
       allDay: false,
+      end: "2026-03-10T16:00:00",
+      start: "2026-03-10T15:00:00",
+      title: "Late",
     });
     const early = state().addEvent({
-      title: "Early",
-      start: "2026-03-10T08:00:00",
-      end: "2026-03-10T09:00:00",
       allDay: false,
+      end: "2026-03-10T09:00:00",
+      start: "2026-03-10T08:00:00",
+      title: "Early",
     });
 
     assert.notEqual(late.id, early.id);
@@ -206,23 +212,23 @@ describe("mutations", () => {
 
   test("updateEvent reports a missing id and re-sorts when the start moves", () => {
     const first = state().addEvent({
-      title: "First",
-      start: "2026-03-10T09:00:00",
-      end: "2026-03-10T10:00:00",
       allDay: false,
+      end: "2026-03-10T10:00:00",
+      start: "2026-03-10T09:00:00",
+      title: "First",
     });
     state().addEvent({
-      title: "Second",
-      start: "2026-03-10T11:00:00",
-      end: "2026-03-10T12:00:00",
       allDay: false,
+      end: "2026-03-10T12:00:00",
+      start: "2026-03-10T11:00:00",
+      title: "Second",
     });
 
     assert.equal(state().updateEvent("nobody", { title: "Ghost" }), false);
     assert.equal(
       state().updateEvent(first.id, {
-        start: "2026-03-10T13:00:00",
         end: "2026-03-10T14:00:00",
+        start: "2026-03-10T13:00:00",
       }),
       true,
     );
@@ -231,10 +237,10 @@ describe("mutations", () => {
 
   test("deleteEvent reports whether the id existed", () => {
     const event = state().addEvent({
-      title: "Doomed",
-      start: "2026-03-10T09:00:00",
-      end: "2026-03-10T10:00:00",
       allDay: false,
+      end: "2026-03-10T10:00:00",
+      start: "2026-03-10T09:00:00",
+      title: "Doomed",
     });
 
     assert.equal(state().deleteEvent("nobody"), false);
@@ -244,11 +250,11 @@ describe("mutations", () => {
 
   test("upsertEvent replaces by id instead of duplicating", () => {
     const event: CalendarEvent = {
-      id: "assistant-1",
-      title: "From the assistant",
-      start: "2026-03-10T09:00:00",
-      end: "2026-03-10T10:00:00",
       allDay: false,
+      end: "2026-03-10T10:00:00",
+      id: "assistant-1",
+      start: "2026-03-10T09:00:00",
+      title: "From the assistant",
     };
 
     state().upsertEvent(event);
@@ -259,10 +265,10 @@ describe("mutations", () => {
 
   test("mutations survive a reload through storage", async () => {
     const event = state().addEvent({
-      title: "Persisted",
-      start: "2026-03-10T09:00:00",
-      end: "2026-03-10T10:00:00",
       allDay: false,
+      end: "2026-03-10T10:00:00",
+      start: "2026-03-10T09:00:00",
+      title: "Persisted",
     });
 
     await reload();

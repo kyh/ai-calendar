@@ -27,7 +27,8 @@ export default defineAgent({
         const auth = ctx.session.auth.current ?? ctx.session.auth.initiator;
         const gatewayApiKey = gatewayApiKeySchema.safeParse(auth?.attributes["gatewayApiKey"]);
         if (!gatewayApiKey.success) {
-          return MODEL_ID; // fall back to the server-credentialed model
+          // fall back to the server-credentialed model
+          return MODEL_ID;
         }
         return createGateway({ apiKey: gatewayApiKey.data })(MODEL_ID);
       },

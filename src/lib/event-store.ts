@@ -4,12 +4,8 @@ import { z } from "zod";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import {
-  calendarEventSchema,
-  type CalendarEvent,
-  type CalendarEventInput,
-  type CalendarEventPatch,
-} from "@/lib/event";
+import { calendarEventSchema } from "@/lib/event";
+import type { CalendarEvent, CalendarEventInput, CalendarEventPatch } from "@/lib/event";
 import { seedEvents } from "@/lib/seed-events";
 
 interface EventStoreState {
@@ -47,13 +43,42 @@ const persistedStateSchema = z.object({
 export const useEventStore = create<EventStoreState>()(
   persist(
     (set, get) => ({
-      events: [],
-      hasHydrated: false,
-      seeded: false,
       addEvent: (input) => {
         const event: CalendarEvent = { ...input, id: crypto.randomUUID() };
         set((state) => ({ events: sortByStart([...state.events, event]) }));
         return event;
+      },
+      deleteEvent: (id) => {
+        if (!get().events.some((event) => event.id === id)) {
+          return false;
+        }
+        set((state) => ({
+          events: state.events.filter((event) => event.id !== id),
+        }));
+        return true;
+      },
+      events: [],
+      hasHydrated: false,
+      seed: () =>
+        set((state) => ({
+          events: sortByStart([
+            ...state.events,
+            ...seedEvents().filter((seed) => !state.events.some((e) => e.id === seed.id)),
+          ]),
+          seeded: true,
+        })),
+      seeded: false,
+      setHasHydrated: (value) => set({ hasHydrated: value }),
+      updateEvent: (id, patch) => {
+        if (!get().events.some((event) => event.id === id)) {
+          return false;
+        }
+        set((state) => ({
+          events: sortByStart(
+            state.events.map((event) => (event.id === id ? { ...event, ...patch } : event)),
+          ),
+        }));
+        return true;
       },
       upsertEvent: (event) => {
         set((state) => ({
@@ -63,52 +88,31 @@ export const useEventStore = create<EventStoreState>()(
           ]),
         }));
       },
-      updateEvent: (id, patch) => {
-        if (!get().events.some((event) => event.id === id)) return false;
-        set((state) => ({
-          events: sortByStart(
-            state.events.map((event) => (event.id === id ? { ...event, ...patch } : event)),
-          ),
-        }));
-        return true;
-      },
-      deleteEvent: (id) => {
-        if (!get().events.some((event) => event.id === id)) return false;
-        set((state) => ({
-          events: state.events.filter((event) => event.id !== id),
-        }));
-        return true;
-      },
-      seed: () =>
-        set((state) => ({
-          events: sortByStart([
-            ...state.events,
-            ...seedEvents().filter((seed) => !state.events.some((e) => e.id === seed.id)),
-          ]),
-          seeded: true,
-        })),
-      setHasHydrated: (value) => set({ hasHydrated: value }),
     }),
     {
-      name: "ai-calendar-events",
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ events: state.events, seeded: state.seeded }),
       merge: (persisted, current) => {
         const parsed = persistedStateSchema.safeParse(persisted);
-        if (!parsed.success) return current;
+        if (!parsed.success) {
+          return current;
+        }
         return {
           ...current,
           events: sortByStart(parsed.data.events),
           seeded: parsed.data.seeded ?? false,
         };
       },
+      name: "ai-calendar-events",
       // An unreadable payload calls back with no state; falling back to the
       // pre-hydration store boots a seeded calendar instead of spinning forever.
       onRehydrateStorage: (initial) => (state) => {
         const store = state ?? initial;
-        if (!store.seeded) store.seed();
+        if (!store.seeded) {
+          store.seed();
+        }
         store.setHasHydrated(true);
       },
+      partialize: (state) => ({ events: state.events, seeded: state.seeded }),
+      storage: createJSONStorage(() => localStorage),
     },
   ),
 );

@@ -3,8 +3,10 @@
 import { useState, useSyncExternalStore } from "react";
 import { addMonths, addWeeks, set, startOfToday } from "date-fns";
 
-import { CalendarHeader, type CalendarView } from "@/components/calendar/calendar-header";
-import { EventDialog, type EventDialogState } from "@/components/calendar/event-dialog";
+import { CalendarHeader } from "@/components/calendar/calendar-header";
+import type { CalendarView } from "@/components/calendar/calendar-header";
+import { EventDialog } from "@/components/calendar/event-dialog";
+import type { EventDialogState } from "@/components/calendar/event-dialog";
 import { MonthView } from "@/components/calendar/month-view";
 import { WeekView } from "@/components/calendar/week-view";
 import { ChatPanel } from "@/components/chat/chat-panel";
@@ -13,7 +15,31 @@ import type { CalendarEvent } from "@/lib/event";
 import { useEventStore } from "@/lib/event-store";
 
 /** The "store" never changes; only the server/client snapshot split matters. */
-const subscribeToNothing = () => () => {};
+const subscribeToNothing = () => () => {
+  /* empty */
+};
+
+interface ActiveViewProps {
+  events: CalendarEvent[];
+  focusDate: Date;
+  view: CalendarView;
+  onCreate: (start: Date) => void;
+  onEdit: (event: CalendarEvent) => void;
+}
+
+const ActiveView = ({ events, focusDate, view, onCreate, onEdit }: ActiveViewProps) =>
+  view === "month" ? (
+    <MonthView
+      events={events}
+      focusDate={focusDate}
+      onDayClick={(day) =>
+        onCreate(set(day, { hours: 9, milliseconds: 0, minutes: 0, seconds: 0 }))
+      }
+      onEventClick={onEdit}
+    />
+  ) : (
+    <WeekView events={events} focusDate={focusDate} onSlotClick={onCreate} onEventClick={onEdit} />
+  );
 
 export const CalendarApp = () => {
   const events = useEventStore((store) => store.events);
@@ -39,15 +65,17 @@ export const CalendarApp = () => {
   const focusDate = focusOverride ?? (isBrowser ? startOfToday() : null);
 
   const step = (direction: 1 | -1) => {
-    if (focusDate === null) return;
+    if (focusDate === null) {
+      return;
+    }
     setFocusOverride(
       view === "month" ? addMonths(focusDate, direction) : addWeeks(focusDate, direction),
     );
   };
 
-  const openCreate = (start: Date) => setDialogState({ mode: "create", start, allDay: false });
+  const openCreate = (start: Date) => setDialogState({ allDay: false, mode: "create", start });
 
-  const openEdit = (event: CalendarEvent) => setDialogState({ mode: "edit", event });
+  const openEdit = (event: CalendarEvent) => setDialogState({ event, mode: "edit" });
 
   return (
     <div className="flex h-dvh flex-col">
@@ -67,21 +95,13 @@ export const CalendarApp = () => {
             <div className="flex h-full items-center justify-center">
               <Spinner className="size-5 text-muted-foreground" />
             </div>
-          ) : view === "month" ? (
-            <MonthView
-              events={events}
-              focusDate={focusDate}
-              onDayClick={(day) =>
-                openCreate(set(day, { hours: 9, minutes: 0, seconds: 0, milliseconds: 0 }))
-              }
-              onEventClick={openEdit}
-            />
           ) : (
-            <WeekView
+            <ActiveView
               events={events}
               focusDate={focusDate}
-              onSlotClick={openCreate}
-              onEventClick={openEdit}
+              view={view}
+              onCreate={openCreate}
+              onEdit={openEdit}
             />
           )}
         </main>

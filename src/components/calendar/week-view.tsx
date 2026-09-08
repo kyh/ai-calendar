@@ -100,16 +100,16 @@ export const WeekView = ({ events, focusDate, onSlotClick, onEventClick }: WeekV
                       onSlotClick(
                         set(day, {
                           hours: hour,
+                          milliseconds: 0,
                           minutes: 0,
                           seconds: 0,
-                          milliseconds: 0,
                         }),
                       )
                     }
                     className="absolute right-0 left-0 border-b border-border/60 transition-colors hover:bg-muted/40"
                     style={{
-                      top: hour * HOUR_HEIGHT_PX,
                       height: HOUR_HEIGHT_PX,
+                      top: hour * HOUR_HEIGHT_PX,
                     }}
                   />
                 ))}
@@ -123,9 +123,9 @@ export const WeekView = ({ events, focusDate, onSlotClick, onEventClick }: WeekV
                       eventColorClass(event.color),
                     )}
                     style={{
-                      top: (startMinutes / 60) * HOUR_HEIGHT_PX,
                       height: Math.max((durationMinutes / 60) * HOUR_HEIGHT_PX - 2, 20),
                       left: `calc(${(lane / laneCount) * 100}% + 2px)`,
+                      top: (startMinutes / 60) * HOUR_HEIGHT_PX,
                       width: `calc(${100 / laneCount}% - 4px)`,
                     }}
                   >

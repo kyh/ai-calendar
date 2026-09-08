@@ -27,39 +27,14 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { toLocalIso } from "@/lib/date";
-import {
-  eventColors,
-  eventColorSchema,
-  type CalendarEvent,
-  type CalendarEventInput,
-  type EventColor,
-} from "@/lib/event";
+import { eventColors, eventColorSchema } from "@/lib/event";
+import type { CalendarEvent, CalendarEventInput, EventColor } from "@/lib/event";
 import { useEventStore } from "@/lib/event-store";
 
 export type EventDialogState =
   | { mode: "closed" }
   | { mode: "create"; start: Date; allDay: boolean }
   | { mode: "edit"; event: CalendarEvent };
-
-interface EventDialogProps {
-  state: EventDialogState;
-  onClose: () => void;
-}
-
-export const EventDialog = ({ state, onClose }: EventDialogProps) => (
-  <Dialog
-    open={state.mode !== "closed"}
-    onOpenChange={(open) => {
-      if (!open) onClose();
-    }}
-  >
-    {state.mode !== "closed" && (
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto">
-        <EventForm state={state} onClose={onClose} />
-      </DialogContent>
-    )}
-  </Dialog>
-);
 
 interface FormValues {
   title: string;
@@ -77,39 +52,39 @@ const initialValues = (state: Exclude<EventDialogState, { mode: "closed" }>): Fo
     const start = parseISO(state.event.start);
     const end = parseISO(state.event.end);
     return {
-      title: state.event.title,
       allDay: state.event.allDay,
-      startDate: start,
-      startTime: format(start, "HH:mm"),
-      endDate: end,
-      endTime: format(end, "HH:mm"),
       color: state.event.color ?? "default",
       description: state.event.description ?? "",
+      endDate: end,
+      endTime: format(end, "HH:mm"),
+      startDate: start,
+      startTime: format(start, "HH:mm"),
+      title: state.event.title,
     };
   }
-  const start = state.start;
+  const { start } = state;
   const end = new Date(start.getTime() + 60 * 60 * 1000);
   return {
-    title: "",
     allDay: state.allDay,
-    startDate: start,
-    startTime: format(start, "HH:mm"),
-    endDate: end,
-    endTime: format(end, "HH:mm"),
     color: "default",
     description: "",
+    endDate: end,
+    endTime: format(end, "HH:mm"),
+    startDate: start,
+    startTime: format(start, "HH:mm"),
+    title: "",
   };
 };
 
 const combine = (date: Date, time: string): Date => {
   const [rawHours, rawMinutes] = time.split(":");
-  const hours = Number.parseInt(rawHours ?? "", 10);
-  const minutes = Number.parseInt(rawMinutes ?? "", 10);
+  const hours = Math.trunc(Number(rawHours ?? ""));
+  const minutes = Math.trunc(Number(rawMinutes ?? ""));
   return set(date, {
     hours: Number.isNaN(hours) ? 0 : hours,
+    milliseconds: 0,
     minutes: Number.isNaN(minutes) ? 0 : minutes,
     seconds: 0,
-    milliseconds: 0,
   });
 };
 
@@ -121,7 +96,7 @@ const EventForm = ({
   onClose: () => void;
 }) => {
   const [values, setValues] = useState<FormValues>(() => initialValues(state));
-  const [error, setError] = useState<string | undefined>(undefined);
+  const [error, setError] = useState<string | undefined>();
   const addEvent = useEventStore((store) => store.addEvent);
   const updateEvent = useEventStore((store) => store.updateEvent);
   const deleteEvent = useEventStore((store) => store.deleteEvent);
@@ -134,10 +109,10 @@ const EventForm = ({
       return;
     }
     const start = values.allDay
-      ? set(values.startDate, { hours: 0, minutes: 0, seconds: 0, milliseconds: 0 })
+      ? set(values.startDate, { hours: 0, milliseconds: 0, minutes: 0, seconds: 0 })
       : combine(values.startDate, values.startTime);
     const end = values.allDay
-      ? set(values.endDate, { hours: 23, minutes: 59, seconds: 59, milliseconds: 0 })
+      ? set(values.endDate, { hours: 23, milliseconds: 0, minutes: 59, seconds: 59 })
       : combine(values.endDate, values.endTime);
     if (end < start) {
       setError("End must be after start.");
@@ -149,21 +124,21 @@ const EventForm = ({
       // — the store folds the patch over the event, so omitting a field keeps
       // the old value instead of removing it.
       updateEvent(state.event.id, {
-        title,
-        start: toLocalIso(start),
-        end: toLocalIso(end),
         allDay: values.allDay,
-        description: description.length > 0 ? description : undefined,
         color: values.color === "default" ? undefined : values.color,
+        description: description.length > 0 ? description : undefined,
+        end: toLocalIso(end),
+        start: toLocalIso(start),
+        title,
       });
     } else {
       const input: CalendarEventInput = {
-        title,
-        start: toLocalIso(start),
-        end: toLocalIso(end),
         allDay: values.allDay,
-        description: description.length > 0 ? description : undefined,
         color: values.color === "default" ? undefined : values.color,
+        description: description.length > 0 ? description : undefined,
+        end: toLocalIso(end),
+        start: toLocalIso(start),
+        title,
       };
       addEvent(input);
     }
@@ -316,3 +291,25 @@ const EventForm = ({
     </form>
   );
 };
+
+interface EventDialogProps {
+  state: EventDialogState;
+  onClose: () => void;
+}
+
+export const EventDialog = ({ state, onClose }: EventDialogProps) => (
+  <Dialog
+    open={state.mode !== "closed"}
+    onOpenChange={(open) => {
+      if (!open) {
+        onClose();
+      }
+    }}
+  >
+    {state.mode !== "closed" && (
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto">
+        <EventForm state={state} onClose={onClose} />
+      </DialogContent>
+    )}
+  </Dialog>
+);

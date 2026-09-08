@@ -18,15 +18,15 @@ const isoDateTime = z.string().refine((value) => !Number.isNaN(Date.parse(value)
 });
 
 export const calendarEventSchema = z.object({
-  id: z.string().min(1),
-  title: z.string().min(1),
-  /** ISO 8601 datetime, e.g. "2026-07-07T12:00:00" (local time). */
-  start: isoDateTime,
+  allDay: z.boolean(),
+  color: eventColorSchema.optional(),
+  description: z.string().optional(),
   /** ISO 8601 datetime; must be at or after `start`. */
   end: isoDateTime,
-  allDay: z.boolean(),
-  description: z.string().optional(),
-  color: eventColorSchema.optional(),
+  id: z.string().min(1),
+  /** ISO 8601 datetime, e.g. "2026-07-07T12:00:00" (local time). */
+  start: isoDateTime,
+  title: z.string().min(1),
 });
 
 export type CalendarEvent = z.infer<typeof calendarEventSchema>;

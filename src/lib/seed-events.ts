@@ -1,8 +1,7 @@
 import { addDays, set, startOfWeek } from "date-fns";
 
 import { toLocalIso } from "@/lib/date";
-import type { CalendarEvent } from "@/lib/event";
-import type { EventColor } from "@/lib/event";
+import type { CalendarEvent, EventColor } from "@/lib/event";
 
 interface SeedSpec {
   title: string;
@@ -17,63 +16,63 @@ interface SeedSpec {
 
 const seeds: SeedSpec[] = [
   {
-    title: "Team standup",
-    dayOffset: 1,
-    startHour: 9.5,
-    durationHours: 0.5,
     color: "blue",
+    dayOffset: 1,
     description: "Daily sync with the product team",
-  },
-  {
-    title: "Design review",
-    dayOffset: 1,
-    startHour: 14,
-    durationHours: 1,
-    color: "purple",
-  },
-  {
-    title: "Lunch with Alex",
-    dayOffset: 2,
-    startHour: 12,
-    durationHours: 1,
-    color: "green",
-  },
-  {
-    title: "1:1 with manager",
-    dayOffset: 3,
-    startHour: 11,
     durationHours: 0.5,
-    color: "blue",
+    startHour: 9.5,
+    title: "Team standup",
   },
   {
-    title: "Quarterly planning",
-    dayOffset: 3,
-    startHour: 15,
-    durationHours: 2,
-    color: "amber",
-    description: "Roadmap review for next quarter",
-  },
-  {
-    title: "Gym",
-    dayOffset: 4,
-    startHour: 18,
+    color: "purple",
+    dayOffset: 1,
     durationHours: 1,
-    color: "red",
+    startHour: 14,
+    title: "Design review",
   },
   {
-    title: "Ship day",
-    dayOffset: 5,
-    startHour: 0,
-    durationHours: 24,
+    color: "green",
+    dayOffset: 2,
+    durationHours: 1,
+    startHour: 12,
+    title: "Lunch with Alex",
+  },
+  {
+    color: "blue",
+    dayOffset: 3,
+    durationHours: 0.5,
+    startHour: 11,
+    title: "1:1 with manager",
+  },
+  {
+    color: "amber",
+    dayOffset: 3,
+    description: "Roadmap review for next quarter",
+    durationHours: 2,
+    startHour: 15,
+    title: "Quarterly planning",
+  },
+  {
+    color: "red",
+    dayOffset: 4,
+    durationHours: 1,
+    startHour: 18,
+    title: "Gym",
+  },
+  {
     allDay: true,
     color: "amber",
+    dayOffset: 5,
+    durationHours: 24,
+    startHour: 0,
+    title: "Ship day",
   },
   {
-    title: "Brunch",
-    dayOffset: 7,
-    startHour: 11,
-    durationHours: 1.5,
     color: "green",
+    dayOffset: 7,
+    durationHours: 1.5,
+    startHour: 11,
+    title: "Brunch",
   },
 ];
 
@@ -84,19 +83,19 @@ export const seedEvents = (): CalendarEvent[] => {
     const day = addDays(weekStart, seed.dayOffset);
     const start = set(day, {
       hours: Math.floor(seed.startHour),
+      milliseconds: 0,
       minutes: Math.round((seed.startHour % 1) * 60),
       seconds: 0,
-      milliseconds: 0,
     });
     const end = new Date(start.getTime() + seed.durationHours * 60 * 60 * 1000);
     return {
-      id: `seed-${index + 1}`,
-      title: seed.title,
-      start: toLocalIso(start),
-      end: toLocalIso(end),
       allDay: seed.allDay ?? false,
-      description: seed.description,
       color: seed.color,
+      description: seed.description,
+      end: toLocalIso(end),
+      id: `seed-${index + 1}`,
+      start: toLocalIso(start),
+      title: seed.title,
     };
   });
 };
