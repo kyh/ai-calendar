@@ -204,7 +204,6 @@ const EventForm = ({
           <FieldLabel htmlFor="event-title">Title</FieldLabel>
           <Input
             id="event-title"
-            // oxlint-disable-next-line jsx-a11y/no-autofocus -- first field of a modal opened on user intent
             autoFocus
             placeholder="Lunch with Sam"
             value={values.title}
