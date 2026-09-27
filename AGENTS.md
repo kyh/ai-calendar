@@ -51,7 +51,7 @@ pnpm verify         # typecheck · lint · format(check) · test
 pnpm build          # optional but cheap; catches prerender-only failures
 ```
 
-`pnpm test` runs Node's built-in runner over `src/**/*.test.ts` (`src/lib/date.test.ts`, `src/lib/event-store.test.ts`) and is part of `verify`. It fails when the glob matches nothing, so a deleted or renamed suite goes red instead of reporting `tests 0` and exiting 0. There is no CI workflow, so `pnpm verify` + `pnpm build` is the whole automated safety net. `format` is `oxfmt --check` (it fails, it does not rewrite); use `pnpm format:fix` to apply.
+`pnpm test` runs Node's built-in runner over `src/**/*.test.ts` (`src/lib/date.test.ts`, `src/lib/event-store.test.ts`) and is part of `verify`. It fails when the glob matches nothing, so a deleted or renamed suite goes red instead of reporting `tests 0` and exiting 0. CI (`.github/workflows/ci.yml`) runs typecheck, lint, format, test and `pnpm build` on every PR and push to `main`. `format` is `oxfmt --check` (it fails, it does not rewrite); use `pnpm format:fix` to apply.
 
 Runtime — drive the real UI with [agent-browser](https://github.com/vercel-labs/agent-browser). This sequence is verified working against `pnpm dev`:
 
