@@ -10,7 +10,7 @@ describe("homeGraph", () => {
   });
 
   test("gives the Organization a contact point and no invented address", () => {
-    assert.equal(organization.contactPoint[0]?.email, "im.kaiyu@gmail.com");
+    assert.equal(organization.contactPoint[0]?.email, "kai@kyh.io");
     assert.equal("address" in organization, false);
     assert.ok(organization.sameAs.length > 0);
   });

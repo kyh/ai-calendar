@@ -3,7 +3,7 @@ export const siteConfig = {
   creator: "@kaiyuhsu",
   description:
     "AI-native calendar — manage your schedule in natural language. Forkable Next.js template.",
-  email: "im.kaiyu@gmail.com",
+  email: "kai@kyh.io",
   name: "AI Calendar",
   repository: "https://github.com/kyh/ai-calendar",
   routes: ["", "/about", "/contact", "/privacy"],
