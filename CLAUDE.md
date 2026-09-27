@@ -26,6 +26,8 @@ src/components/chat/api-key-dialog.tsx
 src/components/calendar/        # calendar-app, header, month-view, week-view, event-dialog
 src/lib/event.ts                # calendar event zod schema — the domain source of truth
 src/lib/event-store.ts          # zustand store, seeds from src/lib/seed-events.ts
+src/lib/agent/                  # agent-readiness: site copy (one source for HTML + Markdown), llms.txt, JSON-LD, Accept negotiation
+src/proxy.ts                    # rewrites Accept: text/markdown to /api/markdown/*
 ```
 
 Flow: chat panel `send({ message, clientContext: calendarSnapshot })` → eve channel authenticates (user bearer key / OIDC / localhost) → dynamic model resolver picks the user's gateway key from session auth (fallback: server `AI_GATEWAY_API_KEY`) → tools return structured payloads → client `onEvent` zod-parses `action.result` events → store mutation + sonner toast.

@@ -5,7 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ThemeProvider } from "next-themes";
 
 import { Toaster } from "@/components/ui/sonner";
-import { siteConfig } from "@/lib/config";
+import { ogImage, siteConfig } from "@/lib/config";
 
 import "./globals.css";
 
@@ -50,13 +50,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   openGraph: {
     description: siteConfig.description,
-    images: [
-      {
-        height: 1080,
-        url: `${siteConfig.url}/og.jpg`,
-        width: 1920,
-      },
-    ],
+    images: [ogImage],
     locale: "en-US",
     siteName: siteConfig.name,
     title: siteConfig.name,
@@ -74,13 +68,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     creator: siteConfig.creator,
     description: siteConfig.description,
-    images: [
-      {
-        height: 1080,
-        url: `${siteConfig.url}/og.jpg`,
-        width: 1920,
-      },
-    ],
+    images: [ogImage],
     title: siteConfig.name,
   },
 };
