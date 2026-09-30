@@ -20,6 +20,6 @@ export const SiteOutline = () => (
     <h2>When to use this</h2>
     <ProseList items={whenToUse} />
     <h2>Pages</h2>
-    <ProseList items={[...pageLinks, ...agentEndpoints]} />
+    <ProseList items={[...pageLinks, ...agentEndpoints]} focus="untabbable" />
   </section>
 );

@@ -26,25 +26,41 @@ export const prosePageMetadata = (page: ProsePage): Metadata => ({
 const isRouterPage = (href: string): boolean =>
   href.startsWith("/") && !(href.split("/").pop() ?? "").includes(".");
 
-const ProseLink = ({ href, label }: { href: string; label: string }) =>
-  isRouterPage(href) ? (
-    <Link href={href} className="font-medium underline underline-offset-4">
+type LinkFocus = "tabbable" | "untabbable";
+
+const ProseLink = ({ href, label, focus }: { href: string; label: string; focus: LinkFocus }) => {
+  const tabIndex = focus === "untabbable" ? -1 : undefined;
+  return isRouterPage(href) ? (
+    <Link
+      href={href}
+      prefetch={focus === "untabbable" ? false : undefined}
+      tabIndex={tabIndex}
+      className="font-medium underline underline-offset-4"
+    >
       {label}
     </Link>
   ) : (
-    <a href={href} className="font-medium underline underline-offset-4">
+    <a href={href} tabIndex={tabIndex} className="font-medium underline underline-offset-4">
       {label}
     </a>
   );
+};
 
-export const ProseList = ({ items }: { items: ProseListItem[] }) => (
+/** `untabbable` is for lists inside visually hidden blocks, so keyboard focus never lands on something invisible. */
+export const ProseList = ({
+  items,
+  focus = "tabbable",
+}: {
+  items: ProseListItem[];
+  focus?: LinkFocus;
+}) => (
   <ul className="mt-4 list-disc space-y-2 pl-5">
     {items.map((item) => (
       <li key={item.label}>
         {item.href === undefined ? (
           <span className="font-medium">{item.label}</span>
         ) : (
-          <ProseLink href={item.href} label={item.label} />
+          <ProseLink href={item.href} label={item.label} focus={focus} />
         )}
         {item.text && <span className="text-muted-foreground">: {item.text}</span>}
       </li>
