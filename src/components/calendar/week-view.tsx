@@ -79,7 +79,7 @@ export const WeekView = ({ events, focusDate, onSlotClick, onEventClick }: WeekV
                 className="absolute right-1.5 -translate-y-1/2 text-[10px] text-muted-foreground"
                 style={{ top: hour * HOUR_HEIGHT_PX }}
               >
-                {format(set(new Date(), { hours: hour, minutes: 0 }), "ha")}
+                {format(set(focusDate, { hours: hour, minutes: 0 }), "ha")}
               </span>
             ))}
           </div>

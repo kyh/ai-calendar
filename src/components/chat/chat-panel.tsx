@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { MessageStreamEvent, SubagentChildEventStreamEvent } from "eve/client";
+import type { MessageStreamEvent } from "eve/client";
 import type { EveMessage, EveMessagePart } from "eve/react";
 import { useEveAgent } from "eve/react";
 import {
@@ -59,16 +59,7 @@ const resolveAuthHeaders = (): Readonly<Record<string, string>> => {
 // zod-parsed against the shared schemas before touching the store.
 // -----------------------------------------------------------------------------
 
-/** Events under `subagent.event` arrive without the durable stream stamp. */
-type AgentStreamEvent = MessageStreamEvent | SubagentChildEventStreamEvent["data"]["event"];
-
-const applyToolResult = (event: AgentStreamEvent): void => {
-  // Delegation is forbidden by the instructions, but if the model strays,
-  // unwrap the child's events so its tool results still reach the store.
-  if (event.type === "subagent.event") {
-    applyToolResult(event.data.event);
-    return;
-  }
+const applyToolResult = (event: MessageStreamEvent): void => {
   if (event.type !== "action.result") {
     return;
   }
