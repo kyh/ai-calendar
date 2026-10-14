@@ -9,7 +9,7 @@ pnpm install
 pnpm dev            # Next.js + the eve agent runtime → http://localhost:3000
 ```
 
-That's the whole provisioning story — there is no bootstrap script, no Docker, no migration step, nothing to seed server-side. `pnpm dev` starts two processes behind one origin: the Next dev server and eve's dev server (see `next.config.ts`).
+That's the whole provisioning story — there is no bootstrap script, no migration step, nothing to seed server-side. `pnpm dev` starts two processes behind one origin: the Next dev server and eve's dev server (see `next.config.ts`).
 
 Liveness: `curl -s -o /dev/null -w '%{http_code}' localhost:3000` → `200`.
 
