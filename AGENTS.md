@@ -90,6 +90,7 @@ That's the whole matrix. There is no mobile, desktop, or extension target, and n
 - **Add UI components only via `pnpm dlx shadcn@latest add <name>`** (base-vega registry, Base UI primitives — `render` prop, not `asChild`). One exception to "never hand-edit generated files": the registry emits `as` casts, which `pnpm verify` rejects. Re-run `pnpm verify` after every `shadcn add` and fix what it flags. `src/components/ui/sonner.tsx` is the known case — re-adding it reintroduces two casts:
   - `theme={theme as ToasterProps["theme"]}` → the local `toasterTheme()` narrowing helper.
   - `style={{ ... } as React.CSSProperties}` → hoist to the local `toasterStyle` const, typed as an intersection of `React.CSSProperties` and a template-literal `Record` of `--*` keys to `string`.
+- **`cacheComponents` and `partialPrefetching` are on** (`next.config.ts`). Route segment config (`dynamic`, `revalidate`, …) is a build error under them; anything reading the clock or the request at render time needs `"use cache"` or `<Suspense>` (see `src/app/sitemap.ts`).
 
 ## Map
 
